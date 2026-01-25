@@ -102,7 +102,10 @@ button.sub{background:var(--sub); color:#fff}
 <div class="popup" id="popup">
   <div class="popup-content">
     <span class="close" onclick="closePopup()">✕</span>
-    <h3 id="popupTitle"></h3>
+    <h3>
+  <span id="popupTitle"></span>
+  <button onclick="editRoomName()">✏️</button>
+</h3>
 
     <textarea id="popupDesc" placeholder="공간 설명"></textarea>
     <input id="popupTag" placeholder="태그 추가 후 Enter">
@@ -125,13 +128,17 @@ function render(){
   data.forEach((f,i)=>{
     const floor = document.createElement("section");
     floor.className="floor";
-    floor.innerHTML=`
-      <div class="floor-header" onclick="toggle(this)">
-        <h2>${f.name}</h2><p>${f.desc}</p>
-      </div>
-      <div class="rooms">
-        <button class="sub" onclick="addRoom(${i})">공간 추가</button>
-      </div>`;
+  floor.innerHTML=`
+  <div class="floor-header">
+    <div onclick="toggle(this)">
+      <h2>${f.name}</h2>
+      <p>${f.desc}</p>
+    </div>
+    <button onclick="editFloor(${i})">✏️ 수정</button>
+  </div>
+  <div class="rooms">
+    <button class="sub" onclick="addRoom(${i})">공간 추가</button>
+  </div>`;
     f.rooms.forEach((r,j)=>{
       const room=document.createElement("div");
       room.className="room";
@@ -192,6 +199,15 @@ popupItem.onkeydown=e=>{
 }
 
 function closePopup(){ popup.style.display="none"; }
+function editFloor(i){
+  const newName = prompt("층 이름 수정", data[i].name);
+  if(!newName) return;
+
+  const newDesc = prompt("층 설명 수정", data[i].desc);
+  data[i].name = newName;
+  data[i].desc = newDesc || "";
+  save();
+}
 
 render();
 </script>
