@@ -1,139 +1,199 @@
-<!DOCTYPE html><html lang="ko">
+<!DOCTYPE html>
+<html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>나폴리탄 호텔 | 운영진용 지도</title>
-  <style>
-    :root{
-      --bg:#0b0b0d;          /* black */
-      --card:#141417;        /* dark black */
-      --accent:#c9a24d;      /* gold */
-      --sub:#8b1e1e;         /* red */
-      --text:#f5f5f7;
-      --muted:#b7b9cc;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0; background:var(--bg); color:var(--text);
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,sans-serif;
-    }
-    header{
-      padding:20px; text-align:center; border-bottom:1px solid #2a2f5a;
-    }
-    header h1{margin:0; font-size:1.5rem; letter-spacing:0.05em}
-    header p{margin:6px 0 0; color:var(--muted); font-size:0.9rem}main{max-width:900px; margin:0 auto; padding:20px}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>나폴리탄 호텔 | 운영진 지도</title>
+
+<style>
+:root{
+  --bg:#0b0b0d; --card:#141417;
+  --accent:#c9a24d; --sub:#8b1e1e;
+  --text:#f5f5f7; --muted:#b7b9cc;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:system-ui,-apple-system,Noto Sans KR,sans-serif;
+}
+header{
+  padding:20px; text-align:center; border-bottom:1px solid #222;
+}
+main{max-width:900px; margin:auto; padding:20px}
+
+button{
+  background:var(--accent); color:#000; border:none;
+  padding:6px 12px; border-radius:8px; cursor:pointer;
+  font-size:.8rem;
+}
+button.sub{background:var(--sub); color:#fff}
 
 .floor{
   background:var(--card);
-  border-radius:16px;
+  border-radius:14px;
   margin-bottom:16px;
-  box-shadow:0 10px 30px rgba(0,0,0,.3);
   overflow:hidden;
 }
 .floor-header{
-  display:flex; justify-content:space-between; align-items:center;
-  padding:16px 20px; cursor:pointer;
+  padding:14px 18px;
   background:linear-gradient(135deg,#1a0f0f,var(--sub));
+  cursor:pointer;
 }
-.floor-header h2{margin:0; font-size:1.1rem}
-.floor-header span{color:var(--accent)}
+.floor-header h2{margin:0}
+.floor-header p{margin:4px 0 0; font-size:.85rem; color:var(--muted)}
 
-.rooms{display:none; padding:12px 20px 20px}
+.rooms{display:none; padding:12px 18px 18px}
 .room{
-  background:#1b1212; border-radius:12px; padding:14px; margin-top:10px;
-  display:flex; justify-content:space-between; align-items:center;
+  background:#1b1212;
+  border-radius:10px;
+  padding:12px;
+  margin-top:10px;
+  cursor:pointer;
 }
-.room-info h3{margin:0 0 4px; font-size:1rem}
-.room-info p{margin:0; font-size:.85rem; color:var(--muted)}
+.room h3{margin:0 0 4px; font-size:.95rem}
+.room p{margin:0; font-size:.8rem; color:var(--muted)}
+
 .tags{margin-top:6px}
 .tag{
-  display:inline-block; font-size:.7rem; padding:2px 6px; margin-right:4px;
-  border-radius:6px; background:#3a3f7a; color:#ddd
+  display:inline-block;
+  font-size:.7rem;
+  padding:2px 6px;
+  margin-right:4px;
+  border-radius:6px;
+  background:#3a3f7a;
 }
-.detail-btn{
-  background:var(--accent); color:#000; border:none; border-radius:20px;
-  padding:6px 12px; cursor:pointer; font-size:.8rem;
-}
+
+.controls{margin-top:10px}
 
 /* popup */
 .popup{
-  position:fixed; inset:0; background:rgba(0,0,0,.6);
-  display:none; align-items:center; justify-content:center; z-index:1000;
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.6);
+  display:none; align-items:center; justify-content:center;
 }
 .popup-content{
-  background:var(--card); border-radius:20px; max-width:400px; width:90%;
-  padding:20px; box-shadow:0 20px 40px rgba(0,0,0,.5);
+  background:var(--card);
+  border-radius:16px;
+  width:90%; max-width:420px;
+  padding:18px;
 }
 .popup-content h3{margin-top:0}
-.close-btn{
-  background:none; border:none; color:var(--muted); float:right; font-size:1.2rem; cursor:pointer
+.popup-content input, .popup-content textarea{
+  width:100%; margin-bottom:8px;
+  background:#0f0f12; color:var(--text);
+  border:1px solid #333; border-radius:6px;
+  padding:6px; font-size:.8rem;
 }
-
-@media (max-width:600px){
-  header h1{font-size:1.2rem}
-  .floor-header h2{font-size:1rem}
-}
-
-  </style>
+.close{float:right; cursor:pointer; color:var(--muted)}
+</style>
 </head>
+
 <body>
-  <!-- =====================
-  호텔 제목 / 상단 영역
-  여기에는 사이트 이름만 있음
-===================== -->
-  <header>
-    <h1>호텔이름 정합시다</h1>
-    <p>운영진 전용 지도</p>
-  </header>  <!-- =====================
-  👇👇👇 실제로 네가 주로 수정할 구간 👇👇👇
-  층 / 방을 추가하는 영역
-===================== -->  <main>
-    <!-- ===== 하나의 층 시작 ===== -->
-    <section class="floor">
-            <!-- 층 제목 + 층 전체 설명 -->
-      <div class="floor-header" onclick="toggleFloor(this)">
-        <div>
-          <h2>10F · 로열 플로어</h2>
-          <p class="floor-desc">호텔 최상층. 선택받은 손님만 접근할 수 있는 구역.</p>
-        </div>
-        <span>▼</span>
+<header>
+  <h1>NAPOLITAN HOTEL</h1>
+  <p>운영진 전용 구조 지도</p>
+</header>
+
+<main>
+  <button onclick="addFloor()">➕ 층 추가</button>
+  <div id="floors"></div>
+</main>
+
+<div class="popup" id="popup">
+  <div class="popup-content">
+    <span class="close" onclick="closePopup()">✕</span>
+    <h3 id="popupTitle"></h3>
+
+    <textarea id="popupDesc" placeholder="공간 설명"></textarea>
+    <input id="popupTag" placeholder="태그 추가 후 Enter">
+    <div id="tagList"></div>
+
+    <input id="popupItem" placeholder="획득 아이템 추가 후 Enter">
+    <ul id="itemList"></ul>
+  </div>
+</div>
+
+<script>
+let data = JSON.parse(localStorage.getItem("hotelData") || "[]");
+let currentRoom = null;
+
+function save(){ localStorage.setItem("hotelData", JSON.stringify(data)); render(); }
+
+function render(){
+  const floors = document.getElementById("floors");
+  floors.innerHTML = "";
+  data.forEach((f,i)=>{
+    const floor = document.createElement("section");
+    floor.className="floor";
+    floor.innerHTML=`
+      <div class="floor-header" onclick="toggle(this)">
+        <h2>${f.name}</h2><p>${f.desc}</p>
       </div>
-            <!-- 이 층에 속한 방 목록 -->
       <div class="rooms">
-                <!-- 방 하나 시작 -->
-        <div class="room">
-          <div class="room-info">
-            <h3>1001호 — 로열 스위트</h3>
-            <p>VIP 전용 객실</p>
-            <div class="tags">
-              <span class="tag">VIP</span><span class="tag">잠김</span>
-            </div>
-          </div>
-          <button class="detail-btn" onclick="openPopup('로열 스위트','호텔 최상층의 객실. 접근 권한이 제한되어 있다.')">상세</button>
-        </div>
-      </div>
-    </section>
-  </main>  <div class="popup" id="popup">
-    <div class="popup-content">
-      <button class="close-btn" onclick="closePopup()">×</button>
-      <h3 id="popup-title"></h3>
-      <p id="popup-desc"></p>
-    </div>
-  </div>  <!-- =====================
-  기능 스크립트 영역
-  ⚠️ 웬만하면 수정 안 해도 됨
-===================== -->  <script>
-    function toggleFloor(el){
-      const rooms = el.nextElementSibling;
-      rooms.style.display = rooms.style.display === 'block' ? 'none' : 'block';
-    }
-    function openPopup(title, desc){
-      document.getElementById('popup-title').innerText = title;
-      document.getElementById('popup-desc').innerText = desc;
-      document.getElementById('popup').style.display = 'flex';
-    }
-    function closePopup(){
-      document.getElementById('popup').style.display = 'none';
-    }
-  </script></body>
+        <button class="sub" onclick="addRoom(${i})">공간 추가</button>
+      </div>`;
+    f.rooms.forEach((r,j)=>{
+      const room=document.createElement("div");
+      room.className="room";
+      room.innerHTML=`
+        <h3>${r.name}</h3>
+        <p>${r.desc}</p>
+        <div class="tags">${r.tags.map(t=>`<span class="tag">${t}</span>`).join("")}</div>`;
+      room.onclick=()=>openPopup(i,j);
+      floor.querySelector(".rooms").appendChild(room);
+    });
+    floors.appendChild(floor);
+  });
+}
+
+function toggle(el){
+  const r=el.nextElementSibling;
+  r.style.display=r.style.display==="block"?"none":"block";
+}
+
+function addFloor(){
+  const name=prompt("층 이름"); if(!name)return;
+  const desc=prompt("층 설명")||"";
+  data.push({name,desc,rooms:[]}); save();
+}
+
+function addRoom(i){
+  const name=prompt("공간 이름"); if(!name)return;
+  data[i].rooms.push({name,desc:"",tags:[],items:[]}); save();
+}
+
+function openPopup(i,j){
+  currentRoom=data[i].rooms[j];
+  popupTitle.innerText=currentRoom.name;
+  popupDesc.value=currentRoom.desc;
+  drawPopup();
+  popup.style.display="flex";
+}
+
+function drawPopup(){
+  tagList.innerHTML=currentRoom.tags.map(t=>`<span class="tag">${t}</span>`).join("");
+  itemList.innerHTML=currentRoom.items.map(i=>`<li>${i}</li>`).join("");
+}
+
+popupDesc.oninput=()=>{currentRoom.desc=popupDesc.value; save();}
+
+popupTag.onkeydown=e=>{
+  if(e.key==="Enter" && popupTag.value){
+    currentRoom.tags.push(popupTag.value);
+    popupTag.value=""; save();
+  }
+}
+
+popupItem.onkeydown=e=>{
+  if(e.key==="Enter" && popupItem.value){
+    currentRoom.items.push(popupItem.value);
+    popupItem.value=""; save();
+  }
+}
+
+function closePopup(){ popup.style.display="none"; }
+
+render();
+</script>
+</body>
 </html>
