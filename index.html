@@ -102,9 +102,10 @@ button.sub{background:var(--sub); color:#fff}
 <div class="popup" id="popup">
   <div class="popup-content">
     <span class="close" onclick="closePopup()">✕</span>
-    <h3>
+   <h3>
   <span id="popupTitle"></span>
   <button onclick="editRoomName()">✏️</button>
+  <button onclick="deleteRoom()">🗑</button>
 </h3>
 
     <textarea id="popupDesc" placeholder="공간 설명"></textarea>
@@ -134,7 +135,7 @@ function render(){
       <h2>${f.name}</h2>
       <p>${f.desc}</p>
     </div>
-    <button onclick="editFloor(${i})">✏️ 수정</button>
+    <button onclick="editFloor(${i})">✏️ 수정</button><button onclick="deleteFloor(${i})">🗑 삭제</button>
   </div>
   <div class="rooms">
     <button class="sub" onclick="addRoom(${i})">공간 추가</button>
@@ -206,6 +207,12 @@ function editFloor(i){
   const newDesc = prompt("층 설명 수정", data[i].desc);
   data[i].name = newName;
   data[i].desc = newDesc || "";
+  save();
+}
+function deleteFloor(i){
+  const ok = confirm("이 층과 모든 공간을 삭제할까요?");
+  if(!ok) return;
+  data.splice(i, 1);
   save();
 }
 
