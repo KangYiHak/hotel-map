@@ -15,12 +15,13 @@
   --muted:#b7b9cc;
 }
 
-*{box-sizing:border-box}
+*{box-sizing:border-box;}
 body{
   margin:0;
   background:var(--bg);
   color:var(--text);
   font-family:system-ui,-apple-system,Noto Sans KR,sans-serif;
+  padding:14px;
 }
 
 header{
@@ -57,6 +58,9 @@ button.ghost{background:#222;color:#ccc}
   padding:14px 16px;
   background:linear-gradient(135deg,#1a0f0f,var(--sub));
   cursor:pointer;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
 }
 .floor-header h2{margin:0;font-size:1rem}
 .floor-header p{margin:4px 0 0;font-size:.8rem;color:var(--muted)}
@@ -78,16 +82,6 @@ button.ghost{background:#222;color:#ccc}
 }
 .room h3{margin:0;font-size:.9rem}
 .room p{margin:4px 0 0;font-size:.75rem;color:var(--muted)}
-
-.tags{margin-top:6px}
-.tag{
-  display:inline-block;
-  font-size:.65rem;
-  padding:2px 6px;
-  border-radius:6px;
-  background:#333;
-  margin-right:4px;
-}
 
 .room-controls{
   display:flex;
@@ -168,8 +162,10 @@ button.ghost{background:#222;color:#ccc}
 <script>
 let data = JSON.parse(localStorage.getItem('hotelData')) || [];
 
+/* ---------- 저장 ---------- */
 function save(){ localStorage.setItem('hotelData', JSON.stringify(data)); }
 
+/* ---------- 렌더 ---------- */
 function render(){
   const wrap = document.getElementById('floors');
   wrap.innerHTML = '';
@@ -200,9 +196,8 @@ function render(){
         <div>
           ${r.items.map((it,ii)=>`
             <div class="item ${it.done?'done':''}">
-              <input type="checkbox" ${it.done?'checked':''}
-                onchange="toggleItem(${fi},${ri},${ii})">
-              ${it.name}
+              <input type="checkbox" ${it.done?'checked':''} onchange="toggleItem(${fi},${ri},${ii})">
+              ${it.name} ${it.method?`(${it.method})`:''}
             </div>`).join('')}
         </div>
         <div class="room-controls">
@@ -219,6 +214,7 @@ function render(){
   save();
 }
 
+/* ---------- 토글 ---------- */
 function toggle(el){
   const r = el.parentElement.querySelector('.rooms');
   r.style.display = r.style.display==='block'?'none':'block';
@@ -247,7 +243,7 @@ function deleteFloor(i){
 
 /* ---------- 공간 ---------- */
 function addRoom(fi){
-  data[fi].rooms.push({name:'새 공간',desc:'설명',items:[]});
+  data[fi].rooms.push({name:'새 공간',desc:'공간 설명',items:[]});
   render();
 }
 function editRoom(fi,ri){
@@ -272,7 +268,7 @@ function deleteRoom(fi,ri){
 function addItem(fi,ri){
   popup('아이템 추가',`
     <input id="inm" placeholder="아이템 이름">
-    <textarea id="im">획득 방법</textarea>
+    <textarea id="im" placeholder="획득 방법"></textarea>
     <button onclick="saveItem(${fi},${ri})">추가</button>
   `);
 }
@@ -299,227 +295,6 @@ function popup(t,b){
 function closePopup(){ popup.style.display='none'; }
 
 render();
-</script>
-</body>
-</html>
-  background:var(--bg);
-  color:var(--text);
-  font-family:system-ui, -apple-system, sans-serif;
-  padding:14px;
-}
-
-button{
-  background:var(--accent);
-  color:#000;
-  border:none;
-  padding:8px 14px;
-  border-radius:10px;
-  font-size:.85rem;
-  cursor:pointer;
-}
-button.sub{background:var(--sub); color:#fff}
-
-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:14px;
-}
-header h1{
-  font-size:1.1rem;
-  margin:0;
-}
-
-/* FLOOR */
-.floor{
-  background:var(--card);
-  border-radius:16px;
-  margin-bottom:14px;
-  overflow:hidden;
-}
-.floor-header{
-  padding:14px 16px;
-  background:linear-gradient(135deg,#1a0f0f,var(--sub));
-  cursor:pointer;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-.floor-header h2{
-  margin:0;
-  font-size:.95rem;
-}
-.floor-header .state{
-  font-size:.7rem;
-  color:#ddd;
-  opacity:.8;
-}
-.floor.locked .floor-header{
-  background:linear-gradient(135deg,#1a1a1a,#333);
-}
-.floor.locked .state{
-  color:#aaa;
-}
-
-.rooms{
-  display:none;
-  padding:12px;
-}
-.floor.open .rooms{display:block}
-
-/* ROOM */
-.room{
-  background:#1b1212;
-  border-radius:12px;
-  padding:12px;
-  margin-bottom:8px;
-}
-.room-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-.room h3{
-  margin:0;
-  font-size:.85rem;
-}
-.room p{
-  margin:4px 0 0;
-  font-size:.75rem;
-  color:var(--muted);
-}
-
-.room.locked{
-  background:#181818;
-  opacity:.6;
-}
-.room.locked h3::after{
-  content:" 🔒";
-}
-
-/* DRAG */
-.floor-header,
-.room{
-  touch-action:none;
-}
-.dragging{
-  opacity:.4;
-}
-
-/* MOBILE */
-@media (min-width:768px){
-  body{max-width:720px;margin:auto}
-}
-</style>
-</head>
-
-<body>
-
-<header>
-  <h1>🏨 조사 시트 (운영진)</h1>
-  <button onclick="addFloor()">+ 층 추가</button>
-</header>
-
-<div id="floors"></div>
-
-<script>
-const floorsEl = document.getElementById("floors");
-
-/* ===== FLOOR ===== */
-function addFloor(){
-  const floor = document.createElement("div");
-  floor.className = "floor";
-  floor.draggable = true;
-
-  floor.innerHTML = `
-    <div class="floor-header">
-      <h2 contenteditable="true">새로운 층</h2>
-      <span class="state">열림</span>
-    </div>
-    <div class="rooms"></div>
-  `;
-
-  floorsEl.appendChild(floor);
-  setupFloor(floor);
-}
-
-function setupFloor(floor){
-  const header = floor.querySelector(".floor-header");
-  const rooms = floor.querySelector(".rooms");
-
-  header.onclick = () => {
-    if(floor.classList.contains("locked")) return;
-    floor.classList.toggle("open");
-  };
-
-  // floor drag
-  floor.addEventListener("dragstart",()=>floor.classList.add("dragging"));
-  floor.addEventListener("dragend",()=>floor.classList.remove("dragging"));
-
-  floorsEl.addEventListener("dragover",e=>{
-    e.preventDefault();
-    const after = getDragAfter(floorsEl,e.clientY,".floor");
-    const dragging = document.querySelector(".floor.dragging");
-    if(!dragging) return;
-    after ? floorsEl.insertBefore(dragging,after) : floorsEl.appendChild(dragging);
-  });
-
-  // 기본 방
-  addRoom(rooms);
-}
-
-/* ===== ROOM ===== */
-function addRoom(rooms){
-  const room = document.createElement("div");
-  room.className = "room";
-  room.draggable = true;
-
-  room.innerHTML = `
-    <div class="room-header">
-      <h3 contenteditable="true">방 이름</h3>
-      <button class="sub" onclick="toggleLock(event,this)">잠금</button>
-    </div>
-    <p contenteditable="true">간단한 설명</p>
-  `;
-
-  rooms.appendChild(room);
-
-  room.addEventListener("dragstart",()=>room.classList.add("dragging"));
-  room.addEventListener("dragend",()=>room.classList.remove("dragging"));
-
-  rooms.addEventListener("dragover",e=>{
-    e.preventDefault();
-    const after = getDragAfter(rooms,e.clientY,".room");
-    const dragging = document.querySelector(".room.dragging");
-    if(!dragging) return;
-    after ? rooms.insertBefore(dragging,after) : rooms.appendChild(dragging);
-  });
-}
-
-/* ===== LOCK ===== */
-function toggleLock(e,btn){
-  e.stopPropagation();
-  const room = btn.closest(".room");
-  room.classList.toggle("locked");
-  btn.textContent = room.classList.contains("locked") ? "해제" : "잠금";
-}
-
-/* ===== DRAG UTIL ===== */
-function getDragAfter(container,y,selector){
-  const els = [...container.querySelectorAll(`${selector}:not(.dragging)`)];
-  return els.reduce((closest,el)=>{
-    const box = el.getBoundingClientRect();
-    const offset = y - box.top - box.height/2;
-    if(offset < 0 && offset > closest.offset){
-      return {offset,element:el};
-    }else{
-      return closest;
-    }
-  },{offset:Number.NEGATIVE_INFINITY}).element;
-}
-
-/* init */
-addFloor();
 </script>
 
 </body>
