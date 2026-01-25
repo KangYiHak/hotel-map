@@ -15,13 +15,12 @@
   --muted:#b7b9cc;
 }
 
-*{box-sizing:border-box;}
+*{box-sizing:border-box}
 body{
   margin:0;
   background:var(--bg);
   color:var(--text);
   font-family:system-ui,-apple-system,Noto Sans KR,sans-serif;
-  padding:14px;
 }
 
 header{
@@ -39,28 +38,35 @@ button{
   background:var(--accent);
   color:#000;
   border:none;
-  border-radius:8px;
-  padding:6px 10px;
-  font-size:.75rem;
+  border-radius:10px;
+  padding:6px 12px;
+  font-size:.8rem;
   cursor:pointer;
+  transition:0.2s;
 }
+button:hover{opacity:0.9}
 button.sub{background:var(--sub);color:#fff}
 button.ghost{background:#222;color:#ccc}
 
 /* ---------- 층 ---------- */
 .floor{
   background:var(--card);
-  border-radius:14px;
-  margin-bottom:14px;
+  border-radius:16px;
+  margin-bottom:16px;
   overflow:hidden;
+  box-shadow:0 6px 16px rgba(0,0,0,0.5);
+  transition: transform 0.1s;
 }
+.floor:hover{transform:translateY(-2px)}
+
 .floor-header{
   padding:14px 16px;
   background:linear-gradient(135deg,#1a0f0f,var(--sub));
   cursor:pointer;
   display:flex;
   justify-content:space-between;
-  align-items:center;
+  align-items:flex-start;
+  gap:8px;
 }
 .floor-header h2{margin:0;font-size:1rem}
 .floor-header p{margin:4px 0 0;font-size:.8rem;color:var(--muted)}
@@ -71,22 +77,26 @@ button.ghost{background:#222;color:#ccc}
   padding:10px 16px;
 }
 
+/* ---------- 공간 ---------- */
 .rooms{display:none;padding:10px 16px 16px}
 
-/* ---------- 공간 ---------- */
 .room{
   background:#1b1212;
-  border-radius:10px;
+  border-radius:12px;
   padding:10px;
   margin-top:10px;
+  box-shadow:0 3px 8px rgba(0,0,0,0.3);
+  transition: transform 0.1s;
 }
+.room:hover{transform:translateY(-1px)}
+
 .room h3{margin:0;font-size:.9rem}
 .room p{margin:4px 0 0;font-size:.75rem;color:var(--muted)}
 
 .room-controls{
   display:flex;
   gap:6px;
-  margin-top:8px;
+  margin-top:6px;
 }
 
 /* ---------- 아이템 ---------- */
@@ -131,9 +141,9 @@ button.ghost{background:#222;color:#ccc}
 .close{float:right;cursor:pointer;color:var(--muted)}
 
 /* ---------- 모바일 ---------- */
-@media(max-width:600px){
-  button{width:100%;padding:10px;font-size:.85rem}
-  .floor-controls,.room-controls{flex-direction:column}
+@media(max-width:768px){
+  .floor-controls,.room-controls{display:none}
+  .floor.open .floor-controls,.room.open .room-controls{display:flex;flex-direction:column;gap:6px}
 }
 </style>
 </head>
@@ -162,10 +172,8 @@ button.ghost{background:#222;color:#ccc}
 <script>
 let data = JSON.parse(localStorage.getItem('hotelData')) || [];
 
-/* ---------- 저장 ---------- */
 function save(){ localStorage.setItem('hotelData', JSON.stringify(data)); }
 
-/* ---------- 렌더 ---------- */
 function render(){
   const wrap = document.getElementById('floors');
   wrap.innerHTML = '';
@@ -174,9 +182,11 @@ function render(){
     floor.className='floor';
 
     floor.innerHTML = `
-      <div class="floor-header" onclick="toggle(this)">
-        <h2>${f.name}</h2>
-        <p>${f.desc}</p>
+      <div class="floor-header" onclick="toggleFloor(this)">
+        <div>
+          <h2>${f.name}</h2>
+          <p>${f.desc}</p>
+        </div>
       </div>
       <div class="floor-controls">
         <button onclick="editFloor(${fi})">수정</button>
@@ -196,8 +206,9 @@ function render(){
         <div>
           ${r.items.map((it,ii)=>`
             <div class="item ${it.done?'done':''}">
-              <input type="checkbox" ${it.done?'checked':''} onchange="toggleItem(${fi},${ri},${ii})">
-              ${it.name} ${it.method?`(${it.method})`:''}
+              <input type="checkbox" ${it.done?'checked':''}
+                onchange="toggleItem(${fi},${ri},${ii})">
+              ${it.name} - ${it.method || ''}
             </div>`).join('')}
         </div>
         <div class="room-controls">
@@ -215,9 +226,11 @@ function render(){
 }
 
 /* ---------- 토글 ---------- */
-function toggle(el){
-  const r = el.parentElement.querySelector('.rooms');
-  r.style.display = r.style.display==='block'?'none':'block';
+function toggleFloor(el){
+  const floor = el.parentElement;
+  floor.classList.toggle('open');
+  const rooms = floor.querySelector('.rooms');
+  rooms.style.display = rooms.style.display==='block'?'none':'block';
 }
 
 /* ---------- 층 ---------- */
@@ -243,7 +256,7 @@ function deleteFloor(i){
 
 /* ---------- 공간 ---------- */
 function addRoom(fi){
-  data[fi].rooms.push({name:'새 공간',desc:'공간 설명',items:[]});
+  data[fi].rooms.push({name:'새 공간',desc:'설명',items:[]});
   render();
 }
 function editRoom(fi,ri){
@@ -296,6 +309,5 @@ function closePopup(){ popup.style.display='none'; }
 
 render();
 </script>
-
 </body>
 </html>
