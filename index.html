@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>나폴리탄 호텔 | 운영진 조사 지도</title>
-
 <style>
 :root{
   --bg:#0b0b0d;
@@ -15,7 +14,7 @@
   --muted:#b7b9cc;
 }
 
-*{box-sizing:border-box}
+*{box-sizing:border-box;}
 body{
   margin:0;
   background:var(--bg);
@@ -38,35 +37,29 @@ button{
   background:var(--accent);
   color:#000;
   border:none;
-  border-radius:10px;
-  padding:6px 12px;
-  font-size:.8rem;
+  border-radius:8px;
+  padding:6px 10px;
+  font-size:.75rem;
   cursor:pointer;
-  transition:0.2s;
 }
-button:hover{opacity:0.9}
 button.sub{background:var(--sub);color:#fff}
 button.ghost{background:#222;color:#ccc}
 
 /* ---------- 층 ---------- */
 .floor{
   background:var(--card);
-  border-radius:16px;
-  margin-bottom:16px;
+  border-radius:14px;
+  margin-bottom:14px;
   overflow:hidden;
-  box-shadow:0 6px 16px rgba(0,0,0,0.5);
-  transition: transform 0.1s;
+  cursor:grab;
 }
-.floor:hover{transform:translateY(-2px)}
-
+.floor.dragging{opacity:0.5;}
 .floor-header{
   padding:14px 16px;
   background:linear-gradient(135deg,#1a0f0f,var(--sub));
-  cursor:pointer;
   display:flex;
   justify-content:space-between;
-  align-items:flex-start;
-  gap:8px;
+  align-items:center;
 }
 .floor-header h2{margin:0;font-size:1rem}
 .floor-header p{margin:4px 0 0;font-size:.8rem;color:var(--muted)}
@@ -75,28 +68,38 @@ button.ghost{background:#222;color:#ccc}
   display:flex;
   gap:6px;
   padding:10px 16px;
+  flex-wrap:wrap;
 }
+
+.rooms{display:none;padding:10px 16px 16px;}
 
 /* ---------- 공간 ---------- */
-.rooms{display:none;padding:10px 16px 16px}
-
 .room{
   background:#1b1212;
-  border-radius:12px;
+  border-radius:10px;
   padding:10px;
   margin-top:10px;
-  box-shadow:0 3px 8px rgba(0,0,0,0.3);
-  transition: transform 0.1s;
 }
-.room:hover{transform:translateY(-1px)}
-
 .room h3{margin:0;font-size:.9rem}
 .room p{margin:4px 0 0;font-size:.75rem;color:var(--muted)}
+
+.tags{margin-top:6px}
+.tag{
+  display:inline-block;
+  font-size:.65rem;
+  padding:2px 6px;
+  border-radius:6px;
+  background:#333;
+  margin-right:4px;
+  cursor:pointer;
+}
+.tag.active{background:var(--accent);color:#000;}
 
 .room-controls{
   display:flex;
   gap:6px;
-  margin-top:6px;
+  margin-top:8px;
+  flex-wrap:wrap;
 }
 
 /* ---------- 아이템 ---------- */
@@ -108,6 +111,7 @@ button.ghost{background:#222;color:#ccc}
   margin-top:6px;
 }
 .item.done{opacity:.4;text-decoration:line-through}
+.item input{cursor:pointer;}
 
 /* ---------- 팝업 ---------- */
 .popup{
@@ -138,18 +142,17 @@ button.ghost{background:#222;color:#ccc}
   margin-bottom:8px;
   font-size:.75rem;
 }
-.close{float:right;cursor:pointer;color:var(--muted)}
+.close{float:right;cursor:pointer;color:var(--muted);}
 
 /* ---------- 모바일 ---------- */
-@media(max-width:768px){
-  .floor-controls,.room-controls{display:none}
-  .floor.open .floor-controls,.room.open .room-controls{display:flex;flex-direction:column;gap:6px}
+@media(max-width:600px){
+  button{width:100%;padding:10px;font-size:.85rem;}
+  .floor-controls,.room-controls{flex-direction:column;}
 }
 </style>
 </head>
 
 <body>
-
 <header>
   <h1>NAPOLITAN HOTEL</h1>
   <p>운영진 전용 조사 지도</p>
@@ -158,6 +161,11 @@ button.ghost{background:#222;color:#ccc}
 <main>
   <button onclick="addFloor()">➕ 층 추가</button>
   <div id="floors"></div>
+
+  <div style="margin-top:16px;">
+    <label>태그 필터:</label>
+    <div id="tagFilter"></div>
+  </div>
 </main>
 
 <!-- 팝업 -->
@@ -171,18 +179,21 @@ button.ghost{background:#222;color:#ccc}
 
 <script>
 let data = JSON.parse(localStorage.getItem('hotelData')) || [];
+let activeTags = [];
 
 function save(){ localStorage.setItem('hotelData', JSON.stringify(data)); }
-
 function render(){
   const wrap = document.getElementById('floors');
   wrap.innerHTML = '';
+  const tagsSet = new Set();
+
   data.forEach((f,fi)=>{
     const floor = document.createElement('div');
     floor.className='floor';
+    floor.draggable=true;
 
     floor.innerHTML = `
-      <div class="floor-header" onclick="toggleFloor(this)">
+      <div class="floor-header" onclick="toggleRooms(this)">
         <div>
           <h2>${f.name}</h2>
           <p>${f.desc}</p>
@@ -203,12 +214,14 @@ function render(){
       room.innerHTML = `
         <h3>${r.name}</h3>
         <p>${r.desc}</p>
+        <div class="tags">
+          ${r.tags.map(t=>`<span class="tag ${activeTags.includes(t)?'active':''}" onclick="toggleTag('${t}')">${t}</span>`).join('')}
+        </div>
         <div>
           ${r.items.map((it,ii)=>`
             <div class="item ${it.done?'done':''}">
-              <input type="checkbox" ${it.done?'checked':''}
-                onchange="toggleItem(${fi},${ri},${ii})">
-              ${it.name} - ${it.method || ''}
+              <input type="checkbox" ${it.done?'checked':''} onchange="toggleItem(${fi},${ri},${ii})">
+              <span onclick="editItem(${fi},${ri},${ii})">${it.name}</span>
             </div>`).join('')}
         </div>
         <div class="room-controls">
@@ -218,24 +231,31 @@ function render(){
         </div>
       `;
       rooms.appendChild(room);
+      r.tags.forEach(t=>tagsSet.add(t));
     });
 
     wrap.appendChild(floor);
   });
+
+  renderTagFilter([...tagsSet].sort());
   save();
 }
 
-/* ---------- 토글 ---------- */
-function toggleFloor(el){
-  const floor = el.parentElement;
-  floor.classList.toggle('open');
-  const rooms = floor.querySelector('.rooms');
-  rooms.style.display = rooms.style.display==='block'?'none':'block';
+function renderTagFilter(tags){
+  const f = document.getElementById('tagFilter');
+  f.innerHTML = tags.map(t=>`<span class="tag ${activeTags.includes(t)?'active':''}" onclick="toggleTag('${t}')">${t}</span>`).join('');
+}
+
+function toggleTag(t){
+  const idx = activeTags.indexOf(t);
+  if(idx>-1) activeTags.splice(idx,1);
+  else activeTags.push(t);
+  render();
 }
 
 /* ---------- 층 ---------- */
 function addFloor(){
-  data.push({name:'새 층',desc:'층 설명',rooms:[]});
+  data.push({name:'새 층',desc:'테마',rooms:[]});
   render();
 }
 function editFloor(i){
@@ -256,7 +276,7 @@ function deleteFloor(i){
 
 /* ---------- 공간 ---------- */
 function addRoom(fi){
-  data[fi].rooms.push({name:'새 공간',desc:'설명',items:[]});
+  data[fi].rooms.push({name:'새 공간',desc:'설명',tags:[],items:[]});
   render();
 }
 function editRoom(fi,ri){
@@ -281,7 +301,7 @@ function deleteRoom(fi,ri){
 function addItem(fi,ri){
   popup('아이템 추가',`
     <input id="inm" placeholder="아이템 이름">
-    <textarea id="im" placeholder="획득 방법"></textarea>
+    <textarea id="im" placeholder="획득 경로"></textarea>
     <button onclick="saveItem(${fi},${ri})">추가</button>
   `);
 }
@@ -291,6 +311,20 @@ function saveItem(fi,ri){
     method:im.value,
     done:false
   });
+  closePopup();render();
+}
+function editItem(fi,ri,ii){
+  const it=data[fi].rooms[ri].items[ii];
+  popup('아이템 수정',`
+    <input id="inm" value="${it.name}">
+    <textarea id="im">${it.method}</textarea>
+    <button onclick="saveEditedItem(${fi},${ri},${ii})">저장</button>
+  `);
+}
+function saveEditedItem(fi,ri,ii){
+  const it=data[fi].rooms[ri].items[ii];
+  it.name=inm.value;
+  it.method=im.value;
   closePopup();render();
 }
 function toggleItem(fi,ri,ii){
@@ -307,6 +341,45 @@ function popup(t,b){
 }
 function closePopup(){ popup.style.display='none'; }
 
+/* ---------- 공간 목록 열기/닫기 ---------- */
+function toggleRooms(el){
+  const rooms = el.parentElement.querySelector('.rooms');
+  rooms.style.display = rooms.style.display==='block'?'none':'block';
+}
+
+/* ---------- 드래그 층 이동 ---------- */
+let dragSrc = null;
+document.addEventListener('dragstart',e=>{
+  if(e.target.classList.contains('floor')) dragSrc=e.target;
+});
+document.addEventListener('dragover',e=>{
+  e.preventDefault();
+  if(e.target.classList.contains('floor')){
+    const bounding=e.target.getBoundingClientRect();
+    const offset=e.clientY - bounding.top;
+    if(offset>bounding.height/2) e.target.style.borderBottom='2px solid var(--accent)';
+    else e.target.style.borderTop='2px solid var(--accent)';
+  }
+});
+document.addEventListener('dragleave',e=>{
+  if(e.target.classList.contains('floor')){
+    e.target.style.borderTop='';
+    e.target.style.borderBottom='';
+  }
+});
+document.addEventListener('drop',e=>{
+  e.preventDefault();
+  if(dragSrc && e.target.classList.contains('floor')){
+    const from = Array.from(dragSrc.parentElement.children).indexOf(dragSrc);
+    const to = Array.from(e.target.parentElement.children).indexOf(e.target);
+    if(from!==to){
+      const moved = data.splice(from,1)[0];
+      data.splice(to,0,moved);
+      render();
+    }
+  }
+  document.querySelectorAll('.floor').forEach(f=>{f.style.borderTop='';f.style.borderBottom='';});
+});
 render();
 </script>
 </body>
