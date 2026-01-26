@@ -178,6 +178,9 @@ button.ghost{background:#222;color:#ccc}
 </div>
 
 <script>
+const popup = document.getElementById('popup');
+const popupTitle = document.getElementById('popupTitle');
+const popupBody = document.getElementById('popupBody');
 let data = JSON.parse(localStorage.getItem('hotelData')) || [];
 let activeTags = [];
 
@@ -343,8 +346,16 @@ function closePopup(){ popup.style.display='none'; }
 
 /* ---------- 공간 목록 열기/닫기 ---------- */
 function toggleRooms(el){
+  // 버튼, 입력창 클릭 시 접힘 방지
+  if (
+    event.target.tagName === 'BUTTON' ||
+    event.target.tagName === 'INPUT' ||
+    event.target.tagName === 'TEXTAREA'
+  ) return;
+
   const rooms = el.parentElement.querySelector('.rooms');
-  rooms.style.display = rooms.style.display==='block'?'none':'block';
+  rooms.style.display =
+    rooms.style.display === 'block' ? 'none' : 'block';
 }
 
 /* ---------- 드래그 층 이동 ---------- */
