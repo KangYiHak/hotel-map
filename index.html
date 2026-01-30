@@ -7,29 +7,33 @@
 
 <style>
 :root{
-  --bg:#0e0e11;
+  --bg:#0d0d10;
   --card:#1a1a1f;
-  --room:#231818;
-  --text:#f2f2f2;
+  --room:#241818;
+  --popup:#16161b;
+  --text:#f3f3f3;
   --muted:#aaa;
-  --accent:#d4b46a;
+  --accent:#d6b36a;
+  --danger:#8b1e1e;
 }
 
-*{box-sizing:border-box;}
-
+*{box-sizing:border-box}
 body{
   margin:0;
   background:var(--bg);
   color:var(--text);
-  font-family:system-ui, sans-serif;
+  font-family:system-ui,sans-serif;
 }
 
 header{
-  padding:16px;
+  padding:14px;
   text-align:center;
   border-bottom:1px solid #222;
+  position:sticky;
+  top:0;
+  background:var(--bg);
+  z-index:50;
 }
-header h1{margin:0;font-size:1.3rem}
 
 button{
   background:var(--accent);
@@ -39,10 +43,8 @@ button{
   font-size:.75rem;
   cursor:pointer;
 }
-button.ghost{
-  background:#222;
-  color:#ccc;
-}
+button.ghost{background:#222;color:#ccc}
+button.danger{background:var(--danger);color:#fff}
 
 main{
   max-width:900px;
@@ -64,155 +66,301 @@ main{
   cursor:pointer;
 }
 
-.floor-title{
-  font-weight:bold;
-}
-
 .floor-controls{
   display:flex;
   gap:6px;
 }
 
-.rooms{
-  margin-top:10px;
-  display:none;
-}
+.rooms{display:none;margin-top:10px}
 
 .room{
   background:var(--room);
   border-radius:10px;
-  padding:8px;
+  padding:10px;
+  margin-top:8px;
+  opacity:1;
+}
+.room.locked{opacity:.5}
+
+.tags{margin-top:6px}
+.tag{
+  display:inline-block;
+  font-size:.65rem;
+  padding:2px 6px;
+  border-radius:6px;
+  background:#333;
+  margin-right:4px;
+}
+
+.room-controls{
+  display:flex;
+  gap:6px;
   margin-top:8px;
 }
 
-.room h4{
-  margin:0;
-  font-size:.85rem;
+/* ---------- 태그 필터 ---------- */
+#tagFilter{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  justify-content:center;
+  margin-top:8px;
 }
-.room p{
-  margin:4px 0 0;
-  font-size:.7rem;
-  color:var(--muted);
+.filter-tag{
+  font-size:.65rem;
+  padding:3px 8px;
+  border-radius:999px;
+  background:#222;
+  cursor:pointer;
+}
+.filter-tag.active{
+  background:var(--accent);
+  color:#000;
 }
 
-.room-add{
-  margin-top:10px;
+/* ---------- 팝업 ---------- */
+.popup{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.7);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:100;
 }
+.popup-content{
+  background:var(--popup);
+  width:90%;
+  max-width:420px;
+  border-radius:16px;
+  padding:16px;
+}
+.popup-content h3{margin-top:0}
+.popup-content input,
+.popup-content textarea{
+  width:100%;
+  margin-bottom:8px;
+  background:#0f0f14;
+  border:1px solid #333;
+  border-radius:6px;
+  color:var(--text);
+  padding:6px;
+}
+.close{float:right;cursor:pointer;color:var(--muted)}
 
-@media(max-width:600px){
-  button{width:100%}
-  .floor-controls{flex-direction:column}
+.item{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:.75rem;
 }
+.item.done{text-decoration:line-through;opacity:.5}
 </style>
 </head>
 
 <body>
 
 <header>
-  <h1>NAPOLITAN HOTEL</h1>
-  <button id="addFloor">+ 층 추가</button>
+  <h2>NAPOLITAN HOTEL</h2>
+  <button onclick="openAddFloor()">+ 층 추가</button>
+
+  <div id="tagFilter"></div>
 </header>
 
 <main>
   <div id="floors"></div>
 </main>
 
-<script>
-const floorsEl = document.getElementById("floors");
-const addFloorBtn = document.getElementById("addFloor");
+<div class="popup" id="popup">
+  <div class="popup-content">
+    <span class="close" onclick="closePopup()">✕</span>
+    <h3 id="popupTitle"></h3>
+    <div id="popupBody"></div>
+  </div>
+</div>
 
+<script>
 let floors = [];
+let activeTags = [];
+
+const floorsEl = document.getElementById('floors');
+const popupEl = document.getElementById('popup');
 
 function render(){
-  floorsEl.innerHTML = "";
+  floorsEl.innerHTML='';
+  const tagSet=new Set();
 
-  floors.forEach((f,i)=>{
-    const floorEl = document.createElement("div");
-    floorEl.className = "floor";
+  floors.forEach((f,fi)=>{
+    const floor=document.createElement('div');
+    floor.className='floor';
 
-    floorEl.innerHTML = `
+    floor.innerHTML=`
       <div class="floor-header">
-        <span class="floor-title">${f.name}</span>
+        <b>${f.name}</b>
         <div class="floor-controls">
-          <button class="ghost up">↑</button>
-          <button class="ghost down">↓</button>
-          <button class="ghost del">삭제</button>
+          <button class="ghost" onclick="moveFloor(${fi},-1)">↑</button>
+          <button class="ghost" onclick="moveFloor(${fi},1)">↓</button>
+          <button class="danger" onclick="removeFloor(${fi})">삭제</button>
         </div>
       </div>
 
       <div class="rooms"></div>
-
-      <div class="room-add">
-        <button class="ghost add-room">+ 공간 추가</button>
-      </div>
+      <button class="ghost" onclick="openAddRoom(${fi})">+ 공간 추가</button>
     `;
 
-    const roomsEl = floorEl.querySelector(".rooms");
+    const roomsEl=floor.querySelector('.rooms');
 
-    f.rooms.forEach(r=>{
-      const roomEl = document.createElement("div");
-      roomEl.className = "room";
-      roomEl.innerHTML = `
-        <h4>${r.name}</h4>
+    f.rooms.forEach((r,ri)=>{
+      r.tags.forEach(t=>tagSet.add(t));
+      if(activeTags.length && !activeTags.some(t=>r.tags.includes(t))) return;
+
+      const room=document.createElement('div');
+      room.className='room'+(r.locked?' locked':'');
+      room.innerHTML=`
+        <b>${r.name} ${r.locked?'🔒':''}</b>
         <p>${r.desc}</p>
+        <div class="tags">${r.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+        <div class="room-controls">
+          <button onclick="openItems(${fi},${ri})">📦 아이템</button>
+          <button onclick="openEditRoom(${fi},${ri})">수정</button>
+          <button class="ghost" onclick="toggleLock(${fi},${ri})">잠김</button>
+          <button class="danger" onclick="removeRoom(${fi},${ri})">삭제</button>
+        </div>
       `;
-      roomsEl.appendChild(roomEl);
+      roomsEl.appendChild(room);
     });
 
-    /* 층 열기/닫기 */
-    floorEl.querySelector(".floor-header").onclick = (e)=>{
-      if(e.target.tagName === "BUTTON") return;
-      roomsEl.style.display =
-        roomsEl.style.display === "block" ? "none" : "block";
+    floor.querySelector('.floor-header').onclick=(e)=>{
+      if(e.target.tagName==='BUTTON') return;
+      roomsEl.style.display=roomsEl.style.display==='block'?'none':'block';
     };
 
-    /* 층 이동 */
-    floorEl.querySelector(".up").onclick = (e)=>{
-      e.stopPropagation();
-      moveFloor(i,-1);
-    };
-    floorEl.querySelector(".down").onclick = (e)=>{
-      e.stopPropagation();
-      moveFloor(i,1);
-    };
-
-    /* 층 삭제 */
-    floorEl.querySelector(".del").onclick = (e)=>{
-      e.stopPropagation();
-      if(confirm("층 삭제할까?")){
-        floors.splice(i,1);
-        render();
-      }
-    };
-
-    /* 공간 추가 (🔥 핵심 수정) */
-    floorEl.querySelector(".add-room").onclick = (e)=>{
-      e.stopPropagation();
-      const name = prompt("공간 이름");
-      if(!name) return;
-      const desc = prompt("공간 설명") || "";
-      f.rooms.push({name,desc});
-      roomsEl.style.display = "block"; // 자동으로 열기
-      render();
-    };
-
-    floorsEl.appendChild(floorEl);
+    floorsEl.appendChild(floor);
   });
+
+  renderTagFilter([...tagSet]);
 }
 
-function moveFloor(i,dir){
-  const t = i + dir;
-  if(t<0 || t>=floors.length) return;
-  [floors[i], floors[t]] = [floors[t], floors[i]];
+function renderTagFilter(tags){
+  const el=document.getElementById('tagFilter');
+  el.innerHTML=tags.map(t=>
+    `<span class="filter-tag ${activeTags.includes(t)?'active':''}"
+      onclick="toggleFilter('${t}')">${t}</span>`
+  ).join('');
+}
+
+function toggleFilter(t){
+  const i=activeTags.indexOf(t);
+  i>-1?activeTags.splice(i,1):activeTags.push(t);
   render();
 }
 
-addFloorBtn.onclick = ()=>{
-  const name = prompt("층 이름");
-  if(!name) return;
-  floors.push({ name, rooms:[] });
+/* ---------- 팝업 ---------- */
+function popup(title,body){
+  popupTitle.innerText=title;
+  popupBody.innerHTML=body;
+  popupEl.style.display='flex';
+}
+function closePopup(){popupEl.style.display='none';}
+
+/* ---------- 층 ---------- */
+function openAddFloor(){
+  popup('층 추가',`
+    <input id="fn" placeholder="층 이름">
+    <button onclick="addFloor()">추가</button>
+  `);
+}
+function addFloor(){
+  floors.push({name:fn.value,rooms:[]});
+  closePopup();render();
+}
+function moveFloor(i,d){
+  const t=i+d;
+  if(t<0||t>=floors.length)return;
+  [floors[i],floors[t]]=[floors[t],floors[i]];
   render();
-};
+}
+function removeFloor(i){
+  if(confirm('삭제?')){floors.splice(i,1);render();}
+}
+
+/* ---------- 공간 ---------- */
+function openAddRoom(fi){
+  popup('공간 추가',`
+    <input id="rn" placeholder="공간 이름">
+    <textarea id="rd" placeholder="설명"></textarea>
+    <input id="rt" placeholder="태그 (쉼표)">
+    <button onclick="addRoom(${fi})">추가</button>
+  `);
+}
+function addRoom(fi){
+  floors[fi].rooms.push({
+    name:rn.value,
+    desc:rd.value,
+    tags:rt.value.split(',').map(t=>t.trim()).filter(Boolean),
+    items:[],
+    locked:false
+  });
+  closePopup();render();
+}
+function openEditRoom(fi,ri){
+  const r=floors[fi].rooms[ri];
+  popup('공간 수정',`
+    <input id="rn" value="${r.name}">
+    <textarea id="rd">${r.desc}</textarea>
+    <input id="rt" value="${r.tags.join(', ')}">
+    <button onclick="saveRoom(${fi},${ri})">저장</button>
+  `);
+}
+function saveRoom(fi,ri){
+  const r=floors[fi].rooms[ri];
+  r.name=rn.value;
+  r.desc=rd.value;
+  r.tags=rt.value.split(',').map(t=>t.trim()).filter(Boolean);
+  closePopup();render();
+}
+function removeRoom(fi,ri){
+  if(confirm('삭제?')){floors[fi].rooms.splice(ri,1);render();}
+}
+function toggleLock(fi,ri){
+  floors[fi].rooms[ri].locked=!floors[fi].rooms[ri].locked;
+  render();
+}
+
+/* ---------- 아이템 ---------- */
+function openItems(fi,ri){
+  const r=floors[fi].rooms[ri];
+  popup(`아이템 - ${r.name}`,`
+    ${r.items.map((it,i)=>`
+      <div class="item ${it.done?'done':''}">
+        <input type="checkbox" ${it.done?'checked':''}
+          ${r.locked?'disabled':''}
+          onchange="toggleItem(${fi},${ri},${i})">
+        <span onclick="openItemDetail(${fi},${ri},${i})">${it.name}</span>
+      </div>`).join('')}
+    ${r.locked?'':'<button onclick="openAddItem('+fi+','+ri+')">+ 아이템</button>'}
+  `);
+}
+function openAddItem(fi,ri){
+  popup('아이템 추가',`
+    <input id="inm" placeholder="이름">
+    <textarea id="im" placeholder="획득 경로"></textarea>
+    <button onclick="addItem(${fi},${ri})">추가</button>
+  `);
+}
+function addItem(fi,ri){
+  floors[fi].rooms[ri].items.push({name:inm.value,method:im.value,done:false});
+  closePopup();render();
+}
+function toggleItem(fi,ri,ii){
+  const it=floors[fi].rooms[ri].items[ii];
+  it.done=!it.done;
+  render();
+}
+function openItemDetail(fi,ri,ii){
+  const it=floors[fi].rooms[ri].items[ii];
+  popup(it.name,`<p>${it.method}</p>`);
+}
 
 render();
 </script>
