@@ -139,7 +139,9 @@ function render(){
           <button class="ghost del">삭제</button>
         </div>
       </div>
+
       <div class="rooms"></div>
+
       <div class="room-add">
         <button class="ghost add-room">+ 공간 추가</button>
       </div>
@@ -157,26 +159,40 @@ function render(){
       roomsEl.appendChild(roomEl);
     });
 
-    // 열기 / 닫기 (버튼 클릭 충돌 방지)
+    /* 층 열기/닫기 */
     floorEl.querySelector(".floor-header").onclick = (e)=>{
       if(e.target.tagName === "BUTTON") return;
-      roomsEl.style.display = roomsEl.style.display==="block"?"none":"block";
+      roomsEl.style.display =
+        roomsEl.style.display === "block" ? "none" : "block";
     };
 
-    floorEl.querySelector(".up").onclick = ()=>moveFloor(i,-1);
-    floorEl.querySelector(".down").onclick = ()=>moveFloor(i,1);
-    floorEl.querySelector(".del").onclick = ()=>{
+    /* 층 이동 */
+    floorEl.querySelector(".up").onclick = (e)=>{
+      e.stopPropagation();
+      moveFloor(i,-1);
+    };
+    floorEl.querySelector(".down").onclick = (e)=>{
+      e.stopPropagation();
+      moveFloor(i,1);
+    };
+
+    /* 층 삭제 */
+    floorEl.querySelector(".del").onclick = (e)=>{
+      e.stopPropagation();
       if(confirm("층 삭제할까?")){
         floors.splice(i,1);
         render();
       }
     };
 
-    floorEl.querySelector(".add-room").onclick = ()=>{
+    /* 공간 추가 (🔥 핵심 수정) */
+    floorEl.querySelector(".add-room").onclick = (e)=>{
+      e.stopPropagation();
       const name = prompt("공간 이름");
       if(!name) return;
       const desc = prompt("공간 설명") || "";
       f.rooms.push({name,desc});
+      roomsEl.style.display = "block"; // 자동으로 열기
       render();
     };
 
