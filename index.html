@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>층 / 공간 관리</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>조사 시트</title>
 
 <style>
 :root{
@@ -13,6 +13,11 @@
   --muted:#999;
   --accent:#ffcc66;
   --sub:#6a5acd;
+
+  --escape:#ffcc66;
+  --heal:#8fff8f;
+  --free:#7dd3ff;
+  --corrupt:#b28dff;
 }
 
 *{box-sizing:border-box}
@@ -20,17 +25,40 @@ body{
   margin:0;
   background:var(--bg);
   color:var(--text);
-  font-family:system-ui, sans-serif;
+  font-family:system-ui,sans-serif;
+}
+
+/* ---------- TAG FILTER ---------- */
+#filterBar{
+  position:sticky;
+  top:0;
+  z-index:100;
+  background:#0c0c10;
+  border-bottom:1px solid #222;
+  padding:10px;
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.filter-tag{
+  background:#222;
+  color:#ccc;
+  padding:4px 8px;
+  border-radius:12px;
+  font-size:.7rem;
+  cursor:pointer;
+}
+.filter-tag.active{
+  background:var(--accent);
+  color:#000;
 }
 
 /* ---------- HEADER ---------- */
 header{
-  padding:16px;
+  padding:14px;
   text-align:center;
-  border-bottom:1px solid #222;
 }
 header h1{margin:0;font-size:1.2rem}
-header button{margin-top:10px}
 
 /* ---------- BUTTON ---------- */
 button{
@@ -83,7 +111,7 @@ main{
   padding:10px;
   margin-top:10px;
 }
-.room.locked{opacity:.7}
+.room.locked{opacity:.6}
 .room h3{margin:0;font-size:.85rem}
 .room p{margin:4px 0 0;font-size:.7rem;color:var(--muted)}
 
@@ -92,6 +120,66 @@ main{
   gap:6px;
   margin-top:8px;
   flex-wrap:wrap;
+}
+
+/* ---------- ITEM ---------- */
+.item{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:.7rem;
+  margin-top:6px;
+}
+.item.done{
+  opacity:.4;
+  text-decoration:line-through;
+}
+.item span{cursor:pointer}
+
+/* ---------- TAG ---------- */
+.tag{
+  display:inline-block;
+  padding:2px 6px;
+  border-radius:8px;
+  font-size:.6rem;
+}
+.tag.escape{background:var(--escape);color:#000}
+.tag.heal{background:var(--heal);color:#000}
+.tag.free{background:var(--free);color:#000}
+.tag.corrupt{background:var(--corrupt);color:#000}
+
+/* ---------- POPUP ---------- */
+.popup{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.6);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:200;
+}
+.popup-content{
+  background:var(--card);
+  border-radius:16px;
+  padding:16px;
+  width:90%;
+  max-width:420px;
+}
+.popup-content h3{margin-top:0}
+.popup-content input,textarea,select{
+  width:100%;
+  background:#0f0f12;
+  color:var(--text);
+  border:1px solid #333;
+  border-radius:6px;
+  padding:6px;
+  font-size:.75rem;
+  margin-bottom:8px;
+}
+.close{
+  float:right;
+  cursor:pointer;
+  color:var(--muted);
 }
 
 /* ---------- MOBILE ---------- */
@@ -104,123 +192,189 @@ main{
 
 <body>
 
+<div id="filterBar"></div>
+
 <header>
-  <h1>공간 정리</h1>
+  <h1>조사 시트</h1>
   <button onclick="addFloor()">층 추가</button>
 </header>
 
 <main id="floors"></main>
 
+<!-- ITEM POPUP -->
+<div class="popup" id="popup">
+  <div class="popup-content">
+    <span class="close" onclick="closePopup()">✕</span>
+    <h3 id="popupTitle"></h3>
+    <div id="popupBody"></div>
+  </div>
+</div>
+
 <script>
-const floors = [];
+let floors = JSON.parse(localStorage.getItem('hotelData')) || [];
+let activeTags=[];
+let current=null;
 
+const TAGS=['탈출','치료','자유','오염'];
+const TAG_CLASS={탈출:'escape',치료:'heal',자유:'free',오염:'corrupt'};
+
+function save(){
+  localStorage.setItem('hotelData',JSON.stringify(floors));
+}
+
+/* ---------- FLOOR ---------- */
 function addFloor(){
-  const name = prompt('층 이름');
-  if(!name) return;
-  floors.push({
-    name,
-    desc:'',
-    open:true,
-    rooms:[]
-  });
-  render();
+  floors.push({name:'새 층',desc:'',open:true,rooms:[]});
+  save();render();
 }
-
-function addRoom(fi){
-  const name = prompt('공간 이름');
-  if(!name) return;
-  floors[fi].rooms.push({
-    name,
-    desc:'',
-    locked:false
-  });
-  render();
+function editFloor(i){
+  popup('층 수정',`
+    <input id="fn" value="${floors[i].name}">
+    <textarea id="fd">${floors[i].desc}</textarea>
+    <button onclick="saveFloor(${i})">저장</button>
+  `);
 }
-
-function toggleFloor(i){
-  floors[i].open = !floors[i].open;
-  render();
+function saveFloor(i){
+  floors[i].name=fn.value;
+  floors[i].desc=fd.value;
+  closePopup();save();render();
 }
-
-function moveFloor(i,dir){
-  const t=i+dir;
-  if(t<0||t>=floors.length) return;
-  [floors[i],floors[t]]=[floors[t],floors[i]];
-  render();
-}
-
-function removeFloor(i){
-  if(confirm('층 삭제할까?')){
-    floors.splice(i,1);
-    render();
+function deleteFloor(i){
+  if(confirm('층 삭제?')){
+    floors.splice(i,1);save();render();
   }
 }
 
-function editFloor(i){
-  const n = prompt('층 이름', floors[i].name);
-  if(n!==null) floors[i].name=n;
-  const d = prompt('층 설명', floors[i].desc);
-  if(d!==null) floors[i].desc=d;
-  render();
+/* ---------- ROOM ---------- */
+function addRoom(fi){
+  floors[fi].rooms.push({name:'새 공간',desc:'',locked:false,items:[]});
+  save();render();
 }
-
-function toggleLock(fi,ri){
-  floors[fi].rooms[ri].locked=!floors[fi].rooms[ri].locked;
-  render();
-}
-
 function editRoom(fi,ri){
   const r=floors[fi].rooms[ri];
-  const n=prompt('공간 이름',r.name);
-  if(n!==null) r.name=n;
-  const d=prompt('설명',r.desc);
-  if(d!==null) r.desc=d;
-  render();
+  popup('공간 수정',`
+    <input id="rn" value="${r.name}">
+    <textarea id="rd">${r.desc}</textarea>
+    <button onclick="saveRoom(${fi},${ri})">저장</button>
+  `);
 }
-
-function removeRoom(fi,ri){
+function saveRoom(fi,ri){
+  const r=floors[fi].rooms[ri];
+  r.name=rn.value;
+  r.desc=rd.value;
+  closePopup();save();render();
+}
+function deleteRoom(fi,ri){
   if(confirm('공간 삭제?')){
     floors[fi].rooms.splice(ri,1);
-    render();
+    save();render();
   }
 }
 
+/* ---------- ITEM ---------- */
+function addItem(fi,ri){
+  current={fi,ri,ii:null};
+  popup('아이템 추가',itemForm());
+}
+function editItem(fi,ri,ii){
+  current={fi,ri,ii};
+  popup('아이템 수정',itemForm(floors[fi].rooms[ri].items[ii]));
+}
+function itemForm(it={}){
+  return `
+    <input id="inm" value="${it.name||''}" placeholder="아이템 이름">
+    <select id="itag">
+      ${TAGS.map(t=>`<option ${it.tag===t?'selected':''}>${t}</option>`).join('')}
+    </select>
+    <textarea id="ip">${it.path||''}</textarea>
+    <button onclick="saveItem()">저장</button>
+  `;
+}
+function saveItem(){
+  const obj={
+    name:inm.value,
+    tag:itag.value,
+    path:ip.value,
+    done:false
+  };
+  const {fi,ri,ii}=current;
+  if(ii===null) floors[fi].rooms[ri].items.push(obj);
+  else floors[fi].rooms[ri].items[ii]=obj;
+  closePopup();save();render();
+}
+function deleteItem(fi,ri,ii){
+  floors[fi].rooms[ri].items.splice(ii,1);
+  save();render();
+}
+
+/* ---------- POPUP ---------- */
+function popup(t,b){
+  popupTitle.innerText=t;
+  popupBody.innerHTML=b;
+  popup.style.display='flex';
+}
+function closePopup(){popup.style.display='none'}
+
+/* ---------- FILTER ---------- */
+function toggleTag(t){
+  activeTags.includes(t)
+    ?activeTags=activeTags.filter(x=>x!==t)
+    :activeTags.push(t);
+  render();
+}
+
+/* ---------- RENDER ---------- */
 function render(){
-  const el=document.getElementById('floors');
-  el.innerHTML='';
+  const fe=document.getElementById('floors');
+  fe.innerHTML='';
+  const tags=new Set();
+
+  floors.forEach(f=>f.rooms.forEach(r=>r.items.forEach(i=>tags.add(i.tag))));
+
+  document.getElementById('filterBar').innerHTML=
+    [...tags].map(t=>`
+      <div class="filter-tag ${activeTags.includes(t)?'active':''}"
+           onclick="toggleTag('${t}')">${t}</div>`).join('');
+
   floors.forEach((f,fi)=>{
-    const div=document.createElement('div');
-    div.className='floor'+(f.open?' open':'');
-    div.innerHTML=`
-      <div class="floor-header" onclick="toggleFloor(${fi})">
-        <h2>${f.name}</h2>
-        <p>${f.desc||''}</p>
+    const d=document.createElement('div');
+    d.className='floor'+(f.open?' open':'');
+    d.innerHTML=`
+      <div class="floor-header" onclick="f.open=!f.open;render()">
+        <h2>${f.name}</h2><p>${f.desc}</p>
       </div>
       <div class="floor-controls">
         <button onclick="addRoom(${fi})">공간 추가</button>
-        <button class="ghost" onclick="moveFloor(${fi},-1)">↑</button>
-        <button class="ghost" onclick="moveFloor(${fi},1)">↓</button>
-        <button class="sub" onclick="editFloor(${fi})">수정</button>
-        <button class="ghost" onclick="removeFloor(${fi})">삭제</button>
+        <button onclick="editFloor(${fi})">수정</button>
+        <button class="sub" onclick="deleteFloor(${fi})">삭제</button>
       </div>
       <div class="rooms">
         ${f.rooms.map((r,ri)=>`
-          <div class="room ${r.locked?'locked':''}">
-            <h3>${r.name}</h3>
-            <p>${r.desc||''}</p>
+          <div class="room">
+            <h3>${r.name}</h3><p>${r.desc}</p>
+            ${r.items.filter(i=>!activeTags.length||activeTags.includes(i.tag)).map((i,ii)=>`
+              <div class="item ${i.done?'done':''}">
+                <input type="checkbox" ${i.done?'checked':''}
+                  onclick="i.done=!i.done;save();render()">
+                <span onclick="alert(i.path||'경로 없음')">${i.name}</span>
+                <span class="tag ${TAG_CLASS[i.tag]}">${i.tag}</span>
+                <button onclick="editItem(${fi},${ri},${ii})">✎</button>
+                <button onclick="deleteItem(${fi},${ri},${ii})">🗑</button>
+              </div>
+            `).join('')}
             <div class="room-controls">
-              <button onclick="toggleLock(${fi},${ri})">${r.locked?'잠김 해제':'잠김'}</button>
-              <button class="sub" onclick="editRoom(${fi},${ri})">수정</button>
-              <button class="ghost" onclick="removeRoom(${fi},${ri})">삭제</button>
+              <button onclick="addItem(${fi},${ri})">아이템 추가</button>
+              <button onclick="editRoom(${fi},${ri})">수정</button>
+              <button class="sub" onclick="deleteRoom(${fi},${ri})">삭제</button>
             </div>
           </div>
         `).join('')}
       </div>
     `;
-    el.appendChild(div);
+    fe.appendChild(d);
   });
 }
+render();
 </script>
-
 </body>
 </html>
