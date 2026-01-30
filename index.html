@@ -123,22 +123,125 @@ button.ghost{background:#222;color:#ccc}
 </div>
 
 <script>
-const floorsEl = document.getElementById('floors');
-const popup = document.getElementById('popup');
 let floors = [];
 
-function openPopup(){
-  popup.style.display='flex';
-}
-function closePopup(){
-  popup.style.display='none';
+const main = document.querySelector("main");
+
+/* ---------- 렌더 ---------- */
+function render() {
+  main.innerHTML = "";
+
+  floors.forEach((floor, fIndex) => {
+    const floorEl = document.createElement("section");
+    floorEl.className = "floor";
+
+    floorEl.innerHTML = `
+      <div class="floor-header">
+        <div>
+          <h2>${floor.name}</h2>
+          <p>${floor.desc}</p>
+        </div>
+        <button class="ghost toggle">열기</button>
+      </div>
+      <div class="floor-controls">
+        <button class="sub add-room">+ 공간 추가</button>
+        <button class="ghost delete-floor">층 삭제</button>
+      </div>
+      <div class="rooms"></div>
+    `;
+
+    const roomsEl = floorEl.querySelector(".rooms");
+
+    floor.rooms.forEach((room, rIndex) => {
+      const roomEl = document.createElement("div");
+      roomEl.className = "room";
+      if (room.locked) roomEl.classList.add("locked");
+
+      roomEl.innerHTML = `
+        <div class="room-header">
+          <h3>${room.name}${room.locked ? " 🔒" : ""}</h3>
+          <button class="ghost lock-btn">
+            ${room.locked ? "잠금 해제" : "잠그기"}
+          </button>
+        </div>
+        <p>${room.desc}</p>
+        <div class="room-controls">
+          <button class="sub edit-room" ${room.locked ? "disabled" : ""}>수정</button>
+          <button class="ghost delete-room">삭제</button>
+        </div>
+      `;
+
+      /* 잠금 토글 */
+      roomEl.querySelector(".lock-btn").onclick = (e) => {
+        e.stopPropagation();
+        room.locked = !room.locked;
+        render();
+      };
+
+      /* 수정 */
+      roomEl.querySelector(".edit-room").onclick = (e) => {
+        e.stopPropagation();
+        const name = prompt("공간 이름", room.name);
+        if (!name) return;
+        const desc = prompt("공간 설명", room.desc);
+        room.name = name;
+        room.desc = desc || "";
+        render();
+      };
+
+      /* 삭제 */
+      roomEl.querySelector(".delete-room").onclick = (e) => {
+        e.stopPropagation();
+        floor.rooms.splice(rIndex, 1);
+        render();
+      };
+
+      roomsEl.appendChild(roomEl);
+    });
+
+    /* 층 열기/닫기 */
+    floorEl.querySelector(".toggle").onclick = () => {
+      roomsEl.style.display =
+        roomsEl.style.display === "block" ? "none" : "block";
+    };
+
+    /* 공간 추가 */
+    floorEl.querySelector(".add-room").onclick = (e) => {
+      e.stopPropagation();
+      const name = prompt("공간 이름");
+      if (!name) return;
+      floor.rooms.push({
+        name,
+        desc: "",
+        locked: false,
+      });
+      render();
+    };
+
+    /* 층 삭제 */
+    floorEl.querySelector(".delete-floor").onclick = () => {
+      floors.splice(fIndex, 1);
+      render();
+    };
+
+    main.appendChild(floorEl);
+  });
 }
 
-function addFloor(){
-  const name = document.getElementById('floorName').value.trim();
-  if(!name) return;
-  floors.push({name});
-  document.getElementById('floorName').value='';
+/* ---------- 층 추가 ---------- */
+document.getElementById("addFloor").onclick = () => {
+  const name = prompt("층 이름");
+  if (!name) return;
+  floors.push({
+    name,
+    desc: "층 테마 설명",
+    rooms: [],
+  });
+  render();
+};
+
+render();
+</script> document.getElementById('floorName').value='';
   closePopup();
   render();
 }
