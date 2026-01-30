@@ -2,59 +2,106 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NAPOLITAN HOTEL</title>
 
 <style>
 :root{
   --bg:#0e0e11;
   --card:#1a1a1f;
+  --room:#231818;
   --text:#f2f2f2;
   --muted:#aaa;
   --accent:#d4b46a;
 }
+
+*{box-sizing:border-box;}
+
 body{
   margin:0;
   background:var(--bg);
   color:var(--text);
   font-family:system-ui, sans-serif;
 }
+
 header{
   padding:16px;
   text-align:center;
   border-bottom:1px solid #222;
 }
-main{
-  max-width:800px;
-  margin:auto;
-  padding:16px;
-}
+header h1{margin:0;font-size:1.3rem}
+
 button{
   background:var(--accent);
   border:none;
-  padding:6px 10px;
   border-radius:8px;
-  font-size:.8rem;
+  padding:6px 10px;
+  font-size:.75rem;
   cursor:pointer;
 }
 button.ghost{
   background:#222;
   color:#ccc;
 }
+
+main{
+  max-width:900px;
+  margin:auto;
+  padding:16px;
+}
+
 .floor{
   background:var(--card);
   border-radius:14px;
   padding:12px;
-  margin-bottom:12px;
+  margin-bottom:14px;
 }
+
 .floor-header{
   display:flex;
   justify-content:space-between;
   align-items:center;
+  cursor:pointer;
 }
+
+.floor-title{
+  font-weight:bold;
+}
+
 .floor-controls{
   display:flex;
   gap:6px;
+}
+
+.rooms{
+  margin-top:10px;
+  display:none;
+}
+
+.room{
+  background:var(--room);
+  border-radius:10px;
+  padding:8px;
   margin-top:8px;
+}
+
+.room h4{
+  margin:0;
+  font-size:.85rem;
+}
+.room p{
+  margin:4px 0 0;
+  font-size:.7rem;
+  color:var(--muted);
+}
+
+.room-add{
+  margin-top:10px;
+}
+
+@media(max-width:600px){
+  button{width:100%}
+  .floor-controls{flex-direction:column}
 }
 </style>
 </head>
@@ -80,25 +127,60 @@ function render(){
   floorsEl.innerHTML = "";
 
   floors.forEach((f,i)=>{
-    const el = document.createElement("div");
-    el.className = "floor";
+    const floorEl = document.createElement("div");
+    floorEl.className = "floor";
 
-    el.innerHTML = `
+    floorEl.innerHTML = `
       <div class="floor-header">
-        <strong>${f.name}</strong>
+        <span class="floor-title">${f.name}</span>
         <div class="floor-controls">
           <button class="ghost up">↑</button>
           <button class="ghost down">↓</button>
           <button class="ghost del">삭제</button>
         </div>
       </div>
+      <div class="rooms"></div>
+      <div class="room-add">
+        <button class="ghost add-room">+ 공간 추가</button>
+      </div>
     `;
 
-    el.querySelector(".up").onclick = () => moveFloor(i,-1);
-    el.querySelector(".down").onclick = () => moveFloor(i,1);
-    el.querySelector(".del").onclick = () => removeFloor(i);
+    const roomsEl = floorEl.querySelector(".rooms");
 
-    floorsEl.appendChild(el);
+    f.rooms.forEach(r=>{
+      const roomEl = document.createElement("div");
+      roomEl.className = "room";
+      roomEl.innerHTML = `
+        <h4>${r.name}</h4>
+        <p>${r.desc}</p>
+      `;
+      roomsEl.appendChild(roomEl);
+    });
+
+    // 열기 / 닫기 (버튼 클릭 충돌 방지)
+    floorEl.querySelector(".floor-header").onclick = (e)=>{
+      if(e.target.tagName === "BUTTON") return;
+      roomsEl.style.display = roomsEl.style.display==="block"?"none":"block";
+    };
+
+    floorEl.querySelector(".up").onclick = ()=>moveFloor(i,-1);
+    floorEl.querySelector(".down").onclick = ()=>moveFloor(i,1);
+    floorEl.querySelector(".del").onclick = ()=>{
+      if(confirm("층 삭제할까?")){
+        floors.splice(i,1);
+        render();
+      }
+    };
+
+    floorEl.querySelector(".add-room").onclick = ()=>{
+      const name = prompt("공간 이름");
+      if(!name) return;
+      const desc = prompt("공간 설명") || "";
+      f.rooms.push({name,desc});
+      render();
+    };
+
+    floorsEl.appendChild(floorEl);
   });
 }
 
@@ -109,16 +191,10 @@ function moveFloor(i,dir){
   render();
 }
 
-function removeFloor(i){
-  if(!confirm("층을 삭제하시겠습니까?")) return;
-  floors.splice(i,1);
-  render();
-}
-
 addFloorBtn.onclick = ()=>{
   const name = prompt("층 이름");
   if(!name) return;
-  floors.push({ name });
+  floors.push({ name, rooms:[] });
   render();
 };
 
