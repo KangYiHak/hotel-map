@@ -1,101 +1,60 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Napolitan Hotel</title>
+<meta charset="UTF-8">
+<title>NAPOLITAN HOTEL</title>
 
 <style>
 :root{
-  --bg:#0b0b0e;
-  --card:#151518;
-  --text:#eee;
-  --muted:#999;
-  --accent:#d6b56e;
-  --sub:#5a2a2a;
+  --bg:#0e0e11;
+  --card:#1a1a1f;
+  --text:#f2f2f2;
+  --muted:#aaa;
+  --accent:#d4b46a;
 }
-
 body{
   margin:0;
   background:var(--bg);
   color:var(--text);
   font-family:system-ui, sans-serif;
 }
-
 header{
-  padding:18px;
+  padding:16px;
   text-align:center;
   border-bottom:1px solid #222;
 }
-header h1{margin:0;font-size:1.4rem}
-header p{margin:6px 0 0;color:var(--muted);font-size:.85rem}
-
 main{
-  max-width:900px;
-  margin:0 auto;
+  max-width:800px;
+  margin:auto;
   padding:16px;
 }
-
 button{
   background:var(--accent);
-  color:#000;
   border:none;
+  padding:6px 10px;
   border-radius:8px;
-  padding:8px 12px;
   font-size:.8rem;
   cursor:pointer;
 }
-button.ghost{background:#222;color:#ccc}
-
+button.ghost{
+  background:#222;
+  color:#ccc;
+}
 .floor{
   background:var(--card);
   border-radius:14px;
-  margin-bottom:14px;
-  overflow:hidden;
+  padding:12px;
+  margin-bottom:12px;
 }
 .floor-header{
-  padding:14px 16px;
-  background:linear-gradient(135deg,#1a0f0f,var(--sub));
   display:flex;
   justify-content:space-between;
   align-items:center;
 }
-.floor-header h2{margin:0;font-size:1rem}
-
 .floor-controls{
   display:flex;
   gap:6px;
-  padding:10px 16px;
-}
-
-.rooms{
-  padding:10px 16px 16px;
-}
-
-.popup{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.6);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  z-index:1000;
-}
-.popup-content{
-  background:var(--card);
-  width:90%;
-  max-width:420px;
-  border-radius:16px;
-  padding:16px;
-}
-.popup-content input{
-  width:100%;
-  padding:8px;
-  margin-bottom:10px;
-  background:#0f0f12;
-  color:var(--text);
-  border:1px solid #333;
-  border-radius:6px;
+  margin-top:8px;
 }
 </style>
 </head>
@@ -104,149 +63,46 @@ button.ghost{background:#222;color:#ccc}
 
 <header>
   <h1>NAPOLITAN HOTEL</h1>
-  <p>공간 기록 조사표</p>
+  <button id="addFloor">+ 층 추가</button>
 </header>
 
 <main>
-  <button onclick="openPopup()">＋ 층 추가</button>
   <div id="floors"></div>
 </main>
 
-<!-- 팝업 -->
-<div class="popup" id="popup">
-  <div class="popup-content">
-    <h3>층 추가</h3>
-    <input id="floorName" placeholder="층 이름" />
-    <button onclick="addFloor()">추가</button>
-    <button class="ghost" onclick="closePopup()">취소</button>
-  </div>
-</div>
-
 <script>
+const floorsEl = document.getElementById("floors");
+const addFloorBtn = document.getElementById("addFloor");
+
 let floors = [];
 
-const main = document.querySelector("main");
+function render(){
+  floorsEl.innerHTML = "";
 
-/* ---------- 렌더 ---------- */
-function render() {
-  main.innerHTML = "";
+  floors.forEach((f,i)=>{
+    const el = document.createElement("div");
+    el.className = "floor";
 
-  floors.forEach((floor, fIndex) => {
-    const floorEl = document.createElement("section");
-    floorEl.className = "floor";
-
-    floorEl.innerHTML = `
+    el.innerHTML = `
       <div class="floor-header">
-        <div>
-          <h2>${floor.name}</h2>
-          <p>${floor.desc}</p>
+        <strong>${f.name}</strong>
+        <div class="floor-controls">
+          <button class="ghost up">↑</button>
+          <button class="ghost down">↓</button>
+          <button class="ghost del">삭제</button>
         </div>
-        <button class="ghost toggle">열기</button>
       </div>
-      <div class="floor-controls">
-        <button class="sub add-room">+ 공간 추가</button>
-        <button class="ghost delete-floor">층 삭제</button>
-      </div>
-      <div class="rooms"></div>
     `;
 
-    const roomsEl = floorEl.querySelector(".rooms");
+    el.querySelector(".up").onclick = () => moveFloor(i,-1);
+    el.querySelector(".down").onclick = () => moveFloor(i,1);
+    el.querySelector(".del").onclick = () => removeFloor(i);
 
-    floor.rooms.forEach((room, rIndex) => {
-      const roomEl = document.createElement("div");
-      roomEl.className = "room";
-      if (room.locked) roomEl.classList.add("locked");
-
-      roomEl.innerHTML = `
-        <div class="room-header">
-          <h3>${room.name}${room.locked ? " 🔒" : ""}</h3>
-          <button class="ghost lock-btn">
-            ${room.locked ? "잠금 해제" : "잠그기"}
-          </button>
-        </div>
-        <p>${room.desc}</p>
-        <div class="room-controls">
-          <button class="sub edit-room" ${room.locked ? "disabled" : ""}>수정</button>
-          <button class="ghost delete-room">삭제</button>
-        </div>
-      `;
-
-      /* 잠금 토글 */
-      roomEl.querySelector(".lock-btn").onclick = (e) => {
-        e.stopPropagation();
-        room.locked = !room.locked;
-        render();
-      };
-
-      /* 수정 */
-      roomEl.querySelector(".edit-room").onclick = (e) => {
-        e.stopPropagation();
-        const name = prompt("공간 이름", room.name);
-        if (!name) return;
-        const desc = prompt("공간 설명", room.desc);
-        room.name = name;
-        room.desc = desc || "";
-        render();
-      };
-
-      /* 삭제 */
-      roomEl.querySelector(".delete-room").onclick = (e) => {
-        e.stopPropagation();
-        floor.rooms.splice(rIndex, 1);
-        render();
-      };
-
-      roomsEl.appendChild(roomEl);
-    });
-
-    /* 층 열기/닫기 */
-    floorEl.querySelector(".toggle").onclick = () => {
-      roomsEl.style.display =
-        roomsEl.style.display === "block" ? "none" : "block";
-    };
-
-    /* 공간 추가 */
-    floorEl.querySelector(".add-room").onclick = (e) => {
-      e.stopPropagation();
-      const name = prompt("공간 이름");
-      if (!name) return;
-      floor.rooms.push({
-        name,
-        desc: "",
-        locked: false,
-      });
-      render();
-    };
-
-    /* 층 삭제 */
-    floorEl.querySelector(".delete-floor").onclick = () => {
-      floors.splice(fIndex, 1);
-      render();
-    };
-
-    main.appendChild(floorEl);
+    floorsEl.appendChild(el);
   });
 }
 
-/* ---------- 층 추가 ---------- */
-document.getElementById("addFloor").onclick = () => {
-  const name = prompt("층 이름");
-  if (!name) return;
-  floors.push({
-    name,
-    desc: "층 테마 설명",
-    rooms: [],
-  });
-  render();
-};
-
-render();
-</script> document.getElementById('floorName').value='';
-  closePopup();
-  render();
-}
-
-function moveFloor(i, dir){
+function moveFloor(i,dir){
   const t = i + dir;
   if(t<0 || t>=floors.length) return;
   [floors[i], floors[t]] = [floors[t], floors[i]];
@@ -254,29 +110,19 @@ function moveFloor(i, dir){
 }
 
 function removeFloor(i){
-  if(!confirm('층을 삭제할까?')) return;
+  if(!confirm("층을 삭제할까?")) return;
   floors.splice(i,1);
   render();
 }
 
-function render(){
-  floorsEl.innerHTML='';
-  floors.forEach((f,i)=>{
-    const el=document.createElement('div');
-    el.className='floor';
-    el.innerHTML=`
-      <div class="floor-header">
-        <h2>${f.name}</h2>
-        <div>
-          <button onclick="moveFloor(${i},-1)">↑</button>
-          <button onclick="moveFloor(${i},1)">↓</button>
-          <button class="ghost" onclick="removeFloor(${i})">삭제</button>
-        </div>
-      </div>
-    `;
-    floorsEl.appendChild(el);
-  });
-}
+addFloorBtn.onclick = ()=>{
+  const name = prompt("층 이름");
+  if(!name) return;
+  floors.push({ name });
+  render();
+};
+
+render();
 </script>
 
 </body>
