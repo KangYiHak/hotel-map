@@ -306,6 +306,12 @@ function deleteItem(fi,ri,ii){
   floors[fi].rooms[ri].items.splice(ii,1);
   save();render();
 }
+function toggleItem(fi,ri,ii){
+  const it = floors[fi].rooms[ri].items[ii];
+  it.done = !it.done;
+  save();
+  render();
+}
 
 /* ---------- POPUP ---------- */
 function popup(t,b){
@@ -355,7 +361,7 @@ function render(){
             ${r.items.filter(i=>!activeTags.length||activeTags.includes(i.tag)).map((i,ii)=>`
               <div class="item ${i.done?'done':''}">
                 <input type="checkbox" ${i.done?'checked':''}
-                  onclick="i.done=!i.done;save();render()">
+  onclick="toggleItem(${fi},${ri},${ii})">
                 <span onclick="alert(i.path||'경로 없음')">${i.name}</span>
                 <span class="tag ${TAG_CLASS[i.tag]}">${i.tag}</span>
                 <button onclick="editItem(${fi},${ri},${ii})">✎</button>
