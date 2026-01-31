@@ -94,13 +94,14 @@ function save() {
    층
 ===================== */
 function addFloor() {
-  const name = floorInput.value.trim();
+  const input = document.getElementById('floorInput');
+  const name = input.value.trim();
   if (!name) return;
 
   const desc = prompt('층 설명');
   floors.push({ name, desc, rooms: [] });
 
-  floorInput.value = '';
+  input.value = '';
   save();
   render();
 }
@@ -116,6 +117,19 @@ function moveFloor(i, dir) {
 function removeFloor(i) {
   if (!confirm('층 삭제?')) return;
   floors.splice(i, 1);
+  save();
+  render();
+}
+
+function editFloor(fi) {
+  const f = floors[fi];
+  const name = prompt('층 이름 수정', f.name);
+  if (!name) return;
+
+  const desc = prompt('층 설명 수정', f.desc || '');
+  f.name = name;
+  f.desc = desc;
+
   save();
   render();
 }
@@ -142,6 +156,19 @@ function addRoom(fi) {
 function removeRoom(fi, ri) {
   if (!confirm('공간 삭제?')) return;
   floors[fi].rooms.splice(ri,1);
+  save();
+  render();
+}
+
+function editRoom(fi, ri) {
+  const r = floors[fi].rooms[ri];
+  const name = prompt('공간 이름 수정', r.name);
+  if (!name) return;
+
+  const desc = prompt('공간 설명 수정', r.desc || '');
+  r.name = name;
+  r.desc = desc;
+
   save();
   render();
 }
@@ -212,6 +239,7 @@ function render() {
         <button onclick="moveFloor(${fi},-1)">↑</button>
         <button onclick="moveFloor(${fi},1)">↓</button>
         <button onclick="removeFloor(${fi})">삭제</button>
+        <button onclick="editFloor(${fi})">수정</button>
         <button onclick="addRoom(${fi})">공간 추가</button>
     `;
 
@@ -229,6 +257,7 @@ function render() {
           <b onclick="toggleRoom(${fi},${ri})">${r.name}</b>
 <p style="font-size:12px;color:#aaa;">${r.desc||''}</p>
 <button onclick="removeRoom(${fi},${ri})">방 삭제</button>
+<button onclick="editRoom(${fi},${ri})">수정</button>
           (${percent}%)
           <div class="progress">
             <div class="progress-bar ${percent===100?'done':''}"
