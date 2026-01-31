@@ -107,14 +107,23 @@ function save() {
    층
 ===================== */
 function addFloor() {
-  const input = document.getElementById('floorInput');
+  const input = document.getElementById('floorInput'); // ← 핵심
   const name = input.value.trim();
-  if (!name) return;
 
-  const desc = prompt('층 설명');
-  floors.push({ name, desc, rooms: [] });
+  if (!name) {
+    alert('층 이름');
+    return;
+  }
 
-  input.value = '';
+  const desc = prompt('층 설명 (테마)') || '';
+
+  floors.push({
+    name: name,
+    desc: desc,
+    rooms: []
+  });
+
+  input.value = ''; // 입력칸 비우기
   save();
   render();
 }
