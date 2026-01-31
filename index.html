@@ -1,413 +1,224 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>조사 시트</title>
+  <meta charset="UTF-8">
+  <title>호텔 탈출 관리</title>
 
-<style>
-:root{
-  --bg:#0f0f12;
-  --card:#1a1a1f;
-  --text:#eee;
-  --muted:#999;
-  --accent:#ffcc66;
-  --sub:#6a5acd;
-
-  --escape:#ffcc66;
-  --heal:#8fff8f;
-  --free:#7dd3ff;
-  --corrupt:#b28dff;
-}
-
-*{box-sizing:border-box}
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:system-ui,sans-serif;
-}
-
-.progress-wrap{
-  margin-top:8px;
-}
-.progress-bar{
-  height:6px;
-  background:#2a2a2a;
-  border-radius:4px;
-  overflow:hidden;
-}
-.progress-fill{
-  height:100%;
-  background:linear-gradient(90deg,var(--accent),#ffd36a);
-  width:0%;
-  transition:width .3s ease;
-}
-.progress-text{
-  font-size:.65rem;
-  color:var(--muted);
-  margin-top:4px;
-}
-
-/* ---------- TAG FILTER ---------- */
-#filterBar{
-  position:sticky;
-  top:0;
-  z-index:100;
-  background:#0c0c10;
-  border-bottom:1px solid #222;
-  padding:10px;
-  display:flex;
-  gap:6px;
-  flex-wrap:wrap;
-}
-.filter-tag{
-  background:#222;
-  color:#ccc;
-  padding:4px 8px;
-  border-radius:12px;
-  font-size:.7rem;
-  cursor:pointer;
-}
-.filter-tag.active{
-  background:var(--accent);
-  color:#000;
-}
-
-/* ---------- HEADER ---------- */
-header{
-  padding:14px;
-  text-align:center;
-}
-header h1{margin:0;font-size:1.2rem}
-
-/* ---------- BUTTON ---------- */
-button{
-  background:var(--accent);
-  border:none;
-  border-radius:8px;
-  padding:6px 10px;
-  font-size:.75rem;
-  cursor:pointer;
-}
-button.sub{background:var(--sub);color:#fff}
-button.ghost{background:#222;color:#ccc}
-
-/* ---------- LAYOUT ---------- */
-main{
-  max-width:900px;
-  margin:0 auto;
+  <!-- ✅ CSS는 여기 -->
+  <style>
+body {
+  background:#0f0f12;
+  color:#eee;
+  font-family:sans-serif;
   padding:16px;
 }
 
-/* ---------- FLOOR ---------- */
-.floor{
-  background:var(--card);
-  border-radius:14px;
-  margin-bottom:14px;
-  overflow:hidden;
-}
-.floor-header{
-  padding:14px;
-  background:linear-gradient(135deg,#1a0f0f,var(--sub));
+button {
+  margin:4px;
+  padding:6px 10px;
+  border-radius:6px;
+  border:none;
   cursor:pointer;
 }
-.floor-header h2{margin:0;font-size:1rem}
-.floor-header p{margin:4px 0 0;font-size:.75rem;color:var(--muted)}
 
-.floor-controls{
-  display:flex;
-  gap:6px;
-  padding:10px 14px;
-  flex-wrap:wrap;
-}
-
-.rooms{display:none;padding:0 14px 14px;}
-.floor.open .rooms{display:block}
-
-/* ---------- ROOM ---------- */
-.room{
+.floor {
   background:#1b1212;
-  border-radius:10px;
   padding:10px;
-  margin-top:10px;
+  border-radius:10px;
+  margin-top:12px;
 }
-.room.locked{opacity:.6}
-.room h3{margin:0;font-size:.85rem}
-.room p{margin:4px 0 0;font-size:.7rem;color:var(--muted)}
 
-.room-controls{
-  display:flex;
-  gap:6px;
+.room {
+  background:#222;
+  padding:8px;
+  border-radius:8px;
   margin-top:8px;
-  flex-wrap:wrap;
 }
 
-/* ---------- ITEM ---------- */
-.item{
-  display:flex;
-  align-items:center;
-  gap:6px;
-  font-size:.7rem;
+.item {
+  font-size:14px;
+}
+
+.progress {
+  height:10px;
+  background:#333;
+  border-radius:5px;
+  overflow:hidden;
   margin-top:6px;
 }
-.item.done{
-  opacity:.4;
-  text-decoration:line-through;
-}
-.item span{cursor:pointer}
 
-/* ---------- TAG ---------- */
-.tag{
-  display:inline-block;
-  padding:2px 6px;
-  border-radius:8px;
-  font-size:.6rem;
-}
-.tag.escape{background:var(--escape);color:#000}
-.tag.heal{background:var(--heal);color:#000}
-.tag.free{background:var(--free);color:#000}
-.tag.corrupt{background:var(--corrupt);color:#000}
-
-/* ---------- POPUP ---------- */
-.popup{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.6);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  z-index:200;
-}
-.popup-content{
-  background:var(--card);
-  border-radius:16px;
-  padding:16px;
-  width:90%;
-  max-width:420px;
-}
-.popup-content h3{margin-top:0}
-.popup-content input,textarea,select{
-  width:100%;
-  background:#0f0f12;
-  color:var(--text);
-  border:1px solid #333;
-  border-radius:6px;
-  padding:6px;
-  font-size:.75rem;
-  margin-bottom:8px;
-}
-.close{
-  float:right;
-  cursor:pointer;
-  color:var(--muted);
+.progress-bar {
+  height:100%;
+  width:0%;
+  background:#4caf50;
 }
 
-/* ---------- MOBILE ---------- */
-@media(max-width:600px){
-  button{width:100%}
-  .floor-controls,.room-controls{flex-direction:column}
+.progress-bar.done {
+  background:#ff5252;
 }
 </style>
 </head>
-
 <body>
-
-<div id="filterBar"></div>
-
-<header>
-  <h1>조사 시트</h1>
-  <button onclick="addFloor()">층 추가</button>
-</header>
-
-<main id="floors"></main>
-
-<!-- ITEM POPUP -->
-<div class="popup" id="popup">
-  <div class="popup-content">
-    <span class="close" onclick="closePopup()">✕</span>
-    <h3 id="popupTitle"></h3>
-    <div id="popupBody"></div>
-  </div>
+<h2>아이템 태그 필터</h2>
+<div id="tagFilter">
+  <button onclick="setFilter('all')">전체</button>
+  <button onclick="setFilter('탈출')">탈출</button>
+  <button onclick="setFilter('치료')">치료</button>
+  <button onclick="setFilter('자유')">자유</button>
+  <button onclick="setFilter('오염')">오염</button>
 </div>
 
+<hr>
+
+<input id="floorInput" placeholder="층 이름">
+<button onclick="addFloor()">층 추가</button>
+
+<div id="floors"></div>
+<!-- 상단 태그 필터 -->
 <script>
-let floors = JSON.parse(localStorage.getItem('hotelData')) || [];
-let activeTags=[];
-let current=null;
+/* =====================
+   데이터 & 저장
+===================== */
+let floors = JSON.parse(localStorage.getItem('floors')) || [];
+let currentFilter = 'all';
 
-const TAGS=['탈출','치료','자유','오염'];
-const TAG_CLASS={탈출:'escape',치료:'heal',자유:'free',오염:'corrupt'};
-
-function save(){
-  localStorage.setItem('hotelData',JSON.stringify(floors));
-}
-
-function calcProgress(items){
-  if(!items || items.length===0) return 0;
-  const done = items.filter(i=>i.done).length;
-  return Math.round((done / items.length) * 100);
+function save() {
+  localStorage.setItem('floors', JSON.stringify(floors));
 }
 
-/* ---------- FLOOR ---------- */
-function addFloor(){
-  floors.push({name:'새 층',desc:'',open:true,rooms:[]});
-  save();render();
-}
-function editFloor(i){
-  popup('층 수정',`
-    <input id="fn" value="${floors[i].name}">
-    <textarea id="fd">${floors[i].desc}</textarea>
-    <button onclick="saveFloor(${i})">저장</button>
-  `);
-}
-function saveFloor(i){
-  floors[i].name=fn.value;
-  floors[i].desc=fd.value;
-  closePopup();save();render();
-}
-function deleteFloor(i){
-  if(confirm('층 삭제?')){
-    floors.splice(i,1);save();render();
-  }
-}
-
-/* ---------- ROOM ---------- */
-function addRoom(fi){
-  floors[fi].rooms.push({name:'새 공간',desc:'',locked:false,items:[]});
-  save();render();
-}
-function editRoom(fi,ri){
-  const r=floors[fi].rooms[ri];
-  popup('공간 수정',`
-    <input id="rn" value="${r.name}">
-    <textarea id="rd">${r.desc}</textarea>
-    <button onclick="saveRoom(${fi},${ri})">저장</button>
-  `);
-}
-function saveRoom(fi,ri){
-  const r=floors[fi].rooms[ri];
-  r.name=rn.value;
-  r.desc=rd.value;
-  closePopup();save();render();
-}
-function deleteRoom(fi,ri){
-  if(confirm('공간 삭제?')){
-    floors[fi].rooms.splice(ri,1);
-    save();render();
-  }
-}
-
-/* ---------- ITEM ---------- */
-function addItem(fi,ri){
-  current={fi,ri,ii:null};
-  popup('아이템 추가',itemForm());
-}
-function editItem(fi,ri,ii){
-  current={fi,ri,ii};
-  popup('아이템 수정',itemForm(floors[fi].rooms[ri].items[ii]));
-}
-function itemForm(it={}){
-  return `
-    <input id="inm" value="${it.name||''}" placeholder="아이템 이름">
-    <select id="itag">
-      ${TAGS.map(t=>`<option ${it.tag===t?'selected':''}>${t}</option>`).join('')}
-    </select>
-    <textarea id="ip">${it.path||''}</textarea>
-    <button onclick="saveItem()">저장</button>
-  `;
-}
-function saveItem(){
-  const obj={
-    name:inm.value,
-    tag:itag.value,
-    path:ip.value,
-    done:false
-  };
-  const {fi,ri,ii}=current;
-  if(ii===null) floors[fi].rooms[ri].items.push(obj);
-  else floors[fi].rooms[ri].items[ii]=obj;
-  closePopup();save();render();
-}
-function deleteItem(fi,ri,ii){
-  floors[fi].rooms[ri].items.splice(ii,1);
-  save();render();
-}
-function toggleItem(fi,ri,ii){
-  const it = floors[fi].rooms[ri].items[ii];
-  it.done = !it.done;
+/* =====================
+   층
+===================== */
+function addFloor() {
+  const name = floorInput.value.trim();
+  if (!name) return;
+  floors.push({ name, rooms: [] });
+  floorInput.value = '';
   save();
   render();
 }
 
-/* ---------- POPUP ---------- */
-function popup(t,b){
-  popupTitle.innerText=t;
-  popupBody.innerHTML=b;
-  popup.style.display='flex';
-}
-function closePopup(){popup.style.display='none'}
-
-/* ---------- FILTER ---------- */
-function toggleTag(t){
-  activeTags.includes(t)
-    ?activeTags=activeTags.filter(x=>x!==t)
-    :activeTags.push(t);
+function moveFloor(i, dir) {
+  const t = i + dir;
+  if (t < 0 || t >= floors.length) return;
+  [floors[i], floors[t]] = [floors[t], floors[i]];
+  save();
   render();
 }
 
-/* ---------- RENDER ---------- */
-function render(){
-  const fe=document.getElementById('floors');
-  fe.innerHTML='';
-  const tags=new Set();
+function removeFloor(i) {
+  if (!confirm('층 삭제?')) return;
+  floors.splice(i, 1);
+  save();
+  render();
+}
 
-  floors.forEach(f=>f.rooms.forEach(r=>r.items.forEach(i=>tags.add(i.tag))));
+/* =====================
+   방
+===================== */
+function addRoom(fi) {
+  const name = prompt('공간 이름');
+  if (!name) return;
+  floors[fi].rooms.push({ name, open:true, items: [] });
+  save();
+  render();
+}
 
-  document.getElementById('filterBar').innerHTML=
-    [...tags].map(t=>`
-      <div class="filter-tag ${activeTags.includes(t)?'active':''}"
-           onclick="toggleTag('${t}')">${t}</div>`).join('');
+function toggleRoom(fi, ri) {
+  floors[fi].rooms[ri].open = !floors[fi].rooms[ri].open;
+  save();
+  render();
+}
 
-  floors.forEach((f,fi)=>{
-    const d=document.createElement('div');
-    d.className='floor'+(f.open?' open':'');
-    d.innerHTML=`
-      <div class="floor-header" onclick="f.open=!f.open;render()">
-        <h2>${f.name}</h2><p>${f.desc}</p>
-      </div>
-      <div class="floor-controls">
+/* =====================
+   아이템
+===================== */
+function addItem(fi, ri) {
+  const text = prompt('아이템 내용');
+  if (!text) return;
+
+  const tag = prompt('태그 선택: 탈출 / 치료 / 자유 / 오염');
+  if (!['탈출','치료','자유','오염'].includes(tag)) return;
+
+  floors[fi].rooms[ri].items.push({
+    text, tag, done:false
+  });
+  save();
+  render();
+}
+
+function toggleItem(fi, ri, ii) {
+  const item = floors[fi].rooms[ri].items[ii];
+  item.done = !item.done;
+  save();
+  render();
+}
+
+/* =====================
+   필터
+===================== */
+function setFilter(tag) {
+  currentFilter = tag;
+  render();
+}
+
+/* =====================
+   렌더링
+===================== */
+function render() {
+  const el = document.getElementById('floors');
+  el.innerHTML = '';
+
+  floors.forEach((f, fi) => {
+    let floorHTML = `
+      <div class="floor">
+        <b>${f.name}</b>
+        <button onclick="moveFloor(${fi},-1)">↑</button>
+        <button onclick="moveFloor(${fi},1)">↓</button>
+        <button onclick="removeFloor(${fi})">삭제</button>
         <button onclick="addRoom(${fi})">공간 추가</button>
-        <button onclick="editFloor(${fi})">수정</button>
-        <button class="sub" onclick="deleteFloor(${fi})">삭제</button>
-      </div>
-      <div class="rooms">
-        ${f.rooms.map((r,ri)=>`
-          <div class="room">
-            <h3>${r.name}</h3><p>${r.desc}</p>
-            ${r.items.filter(i=>!activeTags.length||activeTags.includes(i.tag)).map((i,ii)=>`
-              <div class="item ${i.done?'done':''}">
-                <input type="checkbox" ${i.done?'checked':''}
-  onclick="toggleItem(${fi},${ri},${ii})">
-                <span onclick="alert(i.path||'경로 없음')">${i.name}</span>
-                <span class="tag ${TAG_CLASS[i.tag]}">${i.tag}</span>
-                <button onclick="editItem(${fi},${ri},${ii})">✎</button>
-                <button onclick="deleteItem(${fi},${ri},${ii})">🗑</button>
-              </div>
-            `).join('')}
-            <div class="room-controls">
-              <button onclick="addItem(${fi},${ri})">아이템 추가</button>
-              <button onclick="editRoom(${fi},${ri})">수정</button>
-              <button class="sub" onclick="deleteRoom(${fi},${ri})">삭제</button>
-            </div>
-          </div>
-        `).join('')}
-      </div>
     `;
-    fe.appendChild(d);
+
+    f.rooms.forEach((r, ri) => {
+      let items = r.items.filter(it =>
+        currentFilter === 'all' || it.tag === currentFilter
+      );
+
+      let done = r.items.filter(i=>i.done).length;
+      let total = r.items.length;
+      let percent = total ? Math.round(done/total*100) : 0;
+
+      floorHTML += `
+        <div class="room">
+          <b onclick="toggleRoom(${fi},${ri})">${r.name}</b>
+          (${percent}%)
+          <div class="progress">
+            <div class="progress-bar ${percent===100?'done':''}"
+                 style="width:${percent}%"></div>
+          </div>
+          <button onclick="addItem(${fi},${ri})">아이템 추가</button>
+      `;
+
+      if (r.open) {
+        items.forEach((it, ii) => {
+          floorHTML += `
+            <div class="item">
+              <input type="checkbox"
+                ${it.done?'checked':''}
+                onclick="toggleItem(${fi},${ri},${ii})">
+              [${it.tag}] ${it.text}
+            </div>
+          `;
+        });
+      }
+
+      floorHTML += `</div>`;
+    });
+
+    floorHTML += `</div>`;
+    el.innerHTML += floorHTML;
   });
 }
+
 render();
 </script>
-</body>
-</html>
