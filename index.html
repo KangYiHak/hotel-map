@@ -28,6 +28,27 @@ body{
   font-family:system-ui,sans-serif;
 }
 
+.progress-wrap{
+  margin-top:8px;
+}
+.progress-bar{
+  height:6px;
+  background:#2a2a2a;
+  border-radius:4px;
+  overflow:hidden;
+}
+.progress-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--accent),#ffd36a);
+  width:0%;
+  transition:width .3s ease;
+}
+.progress-text{
+  font-size:.65rem;
+  color:var(--muted);
+  margin-top:4px;
+}
+
 /* ---------- TAG FILTER ---------- */
 #filterBar{
   position:sticky;
@@ -220,6 +241,12 @@ const TAG_CLASS={탈출:'escape',치료:'heal',자유:'free',오염:'corrupt'};
 
 function save(){
   localStorage.setItem('hotelData',JSON.stringify(floors));
+}
+
+function calcProgress(items){
+  if(!items || items.length===0) return 0;
+  const done = items.filter(i=>i.done).length;
+  return Math.round((done / items.length) * 100);
 }
 
 /* ---------- FLOOR ---------- */
