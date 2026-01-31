@@ -226,6 +226,8 @@ function render() {
       floorHTML += `
         <div class="room">
           <b onclick="toggleRoom(${fi},${ri})">${r.name}</b>
+<p style="font-size:12px;color:#aaa;">${r.desc||''}</p>
+<button onclick="removeRoom(${fi},${ri})">방 삭제</button>
           (${percent}%)
           <div class="progress">
             <div class="progress-bar ${percent===100?'done':''}"
@@ -237,7 +239,7 @@ function render() {
       if (r.open) {
         items.forEach((it, ii) => {
           floorHTML += `
-            <div class="item">
+            <div class="item tag-${it.tag}">
               <input type="checkbox"
                 ${it.done?'checked':''}
                 onclick="toggleItem(${fi},${ri},${ii})">
