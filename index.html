@@ -159,12 +159,25 @@ function addItem(fi, ri) {
   const text = prompt('아이템 내용');
   if (!text) return;
 
-  const tag = prompt('태그 선택: 탈출 / 치료 / 자유 / 오염');
-  if (!['탈출','치료','자유','오염'].includes(tag)) return;
+  const tag = prompt(
+    '태그 번호 선택:\n1 탈출\n2 치료\n3 자유\n4 오염'
+  );
+
+  const map = {
+    '1':'탈출',
+    '2':'치료',
+    '3':'자유',
+    '4':'오염'
+  };
+
+  if (!map[tag]) return;
 
   floors[fi].rooms[ri].items.push({
-    text, tag, done:false
+    text,
+    tag: map[tag],
+    done:false
   });
+
   save();
   render();
 }
