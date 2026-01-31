@@ -56,6 +56,10 @@ button {
 .progress-bar.done {
   background:#ff5252;
 }
+.tag-탈출 { color:#ff6b6b; }
+.tag-치료 { color:#4dabf7; }
+.tag-자유 { color:#51cf66; }
+.tag-오염 { color:#c77dff; }
 </style>
 </head>
 <body>
@@ -92,7 +96,10 @@ function save() {
 function addFloor() {
   const name = floorInput.value.trim();
   if (!name) return;
-  floors.push({ name, rooms: [] });
+
+  const desc = prompt('층 설명');
+  floors.push({ name, desc, rooms: [] });
+
   floorInput.value = '';
   save();
   render();
@@ -119,7 +126,22 @@ function removeFloor(i) {
 function addRoom(fi) {
   const name = prompt('공간 이름');
   if (!name) return;
-  floors[fi].rooms.push({ name, open:true, items: [] });
+
+  const desc = prompt('공간 설명');
+  floors[fi].rooms.push({
+    name,
+    desc,
+    open:true,
+    items:[]
+  });
+
+  save();
+  render();
+}
+
+function removeRoom(fi, ri) {
+  if (!confirm('공간 삭제?')) return;
+  floors[fi].rooms.splice(ri,1);
   save();
   render();
 }
